@@ -105,7 +105,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
 
         await server.start();
 
-        // // 2) Create a custom /metrics endpoint
+        //  2) Create a custom /metrics endpoint
         app.get('/metrics', async (req, res) => {
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());

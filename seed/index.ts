@@ -1,5 +1,6 @@
 import { GlobalZodSchema, UserJoiSchema } from '@/auth';
 import { AccountModel, kycModel, SessionModel, TopUpCompanyModel, TransactionsModel, UsersModel } from '@/models';
+import { UsersController } from '@/controllers';
 import { faker } from '@faker-js/faker';
 import { Op } from 'sequelize';
 import short, { generate } from 'short-uuid';
@@ -20,12 +21,12 @@ const createUsers = async () => {
         await UsersModel.create({
             fullName: faker.person.fullName(),
             username: faker.internet.userName(),
-            "phone":    `829180907${i}`,
+            "dniNumber": `000-000000${i}-${i}`,
+            "phone": `829180907${i}`,
             "userAgreementSigned": true,
             email: users[i].email,
             "password": "123456",
             profileImageUrl: faker.image.avatar(),
-            "dniNumber": `000-000000${i}-${i}`,
             sex: faker.person.sex(),
             address: faker.location.streetAddress(),
             dob: faker.date.birthdate(),
@@ -37,8 +38,10 @@ const createUsers = async () => {
             "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
             "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
         })
+
+        UsersController.createUser
     }
-    await createBinomiaUser()
+    // await createBinomiaUser()
 }
 
 
@@ -98,12 +101,12 @@ const createBinomiaUser = async () => {
             "fullName": "binomia",
             "username": "$binomia",
             "phone": "8297809087",
+            "dniNumber": "000-0000000-0",
             "userAgreementSigned": true,
             "email": "brayhan.market@gmail.com",
             "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
             "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
             "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "dniNumber": "000-0000000-0",
             "gender": null,
             "bloodType": null,
             "occupation": null,
@@ -222,8 +225,7 @@ const createBinomiaUser = async () => {
 
 
 export const seedDatabase = async () => {
-    // await createBinomiaUser()
-    // await createUsers()
-    await createTopUpCompany()
+    await createUsers()
+    // await createTopUpCompany()
     // await createTransactions()
 }

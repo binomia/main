@@ -404,6 +404,9 @@ export class UsersController {
 
             const expires = new Date(Date.now() + 1000 * 60 * 60 * 24) // 1 day
 
+            const { privateKey, publicKey } = await RSA.generateKeysAsync()
+            const encryptedPrivateKey = await AES.encrypt(privateKey, ZERO_ENCRYPTION_KEY)
+
             await SessionModel.create({
                 sid,
                 deviceId: registerHeader.deviceid,
@@ -411,8 +414,8 @@ export class UsersController {
                 userId: user.dataValues.id,
                 expires,
                 data: registerHeader.device || {},
-                publicKey: "test",
-                privateKey: "test"
+                publicKey,
+                privateKey: encryptedPrivateKey
             })
 
             return {
@@ -494,7 +497,7 @@ export class UsersController {
             })
 
             if (session) {
-                if(!session.toJSON().verified) {
+                if (!session.toJSON().verified) {
                     const code = GENERATE_SIX_DIGIT_TOKEN()
                     const hash = await HASH.sha256Async(JSON.stringify({
                         sid: session.toJSON().sid,
