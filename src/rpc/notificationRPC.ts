@@ -4,10 +4,13 @@ import axios from "axios";
 
 const notificationClient = new JSONRPCClient(async (jsonRPCRequest) => {
     if (NOTIFICATION_SERVER_URL === undefined) {
-        throw new Error("AUTH_SERVER_URL is not defined");
+        throw new Error("NOTIFICATION_SERVER_URL is not defined");
     }
 
-    return axios.post("http://notification-server:8001", jsonRPCRequest).then((response) => {
+    console.log({NOTIFICATION_SERVER_URL});
+    
+
+    return axios.post(NOTIFICATION_SERVER_URL, jsonRPCRequest).then((response) => {
         if (response.status === 200) {
             notificationClient.receive(response.data);
 

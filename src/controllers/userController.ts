@@ -8,13 +8,12 @@ import { ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY, ZERO_SIGN_PUBLIC_KEY } from
 import { GraphQLError } from 'graphql';
 import { GlobalZodSchema, UserJoiSchema } from '@/auth';
 import { UserModelType, VerificationDataType } from '@/types';
-import { authServer } from '@/rpc';
 import { generate } from 'short-uuid';
 import { z } from 'zod'
 import { Counter } from 'prom-client';
 import { notificationServer } from '@/rpc/notificationRPC';
 import PrometheusMetrics from '@/metrics/PrometheusMetrics';
-import { AES, ECC, HASH, RSA } from "cryptografia"
+import { AES, HASH, RSA } from "cryptografia"
 
 export class UsersController {
     static users = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
@@ -141,10 +140,11 @@ export class UsersController {
 
     static sessionUser = async (_: unknown, ___: any, { metrics, req }: { metrics: PrometheusMetrics, req: any }) => {
         try {
-            const session = await checkForProtectedRequests(req);
+            const session = await checkForProtectedRequests(req);            
+
             metrics.sessionUser.inc()
             return Object.assign({}, session.user, {
-                publicKey: session.publicKey
+                signingKey: session.signingKey
             })
 
         } catch (error: any) {
@@ -221,11 +221,11 @@ export class UsersController {
                 throw new GraphQLError('User not found')
             }
 
-            const verify = await authServer('verifyData', data)
+            // const verify = await authServer('verifyData', data)
 
-            if (!verify) {
-                throw new GraphQLError('Invalid token or signature')
-            }
+            // if (!verify) {
+            //     throw new GraphQLError('Invalid token or signature')
+            // }
 
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(validatedData.password, salt);
@@ -396,26 +396,27 @@ export class UsersController {
                 bloodType: validatedData.bloodType
             })
 
+            const key = await AES.generateKey()
+            const signingKey = await AES.encrypt(key, ZERO_ENCRYPTION_KEY)
+
             const sid = `${generate()}${generate()}${generate()}`
             const token = jwt.sign({
-                userId: userData.id,
+                username: userData.username,
+                signingKey,
                 sid
             }, ZERO_ENCRYPTION_KEY);
 
             const expires = new Date(Date.now() + 1000 * 60 * 60 * 24) // 1 day
 
-            const { privateKey, publicKey } = await RSA.generateKeysAsync()
-            const encryptedPrivateKey = await AES.encrypt(privateKey, ZERO_ENCRYPTION_KEY)
-
             await SessionModel.create({
                 sid,
+                signingKey,
                 deviceId: registerHeader.deviceid,
                 jwt: token,
                 userId: user.dataValues.id,
                 expires,
                 data: registerHeader.device || {},
-                publicKey,
-                privateKey: encryptedPrivateKey
+                expoNotificationToken: req.headers.exponotificationtoken || null,
             })
 
             return {
@@ -453,8 +454,10 @@ export class UsersController {
 
     static login = async (_: unknown, { email, password }: { email: string, password: string }, { res, req }: { res: any, req: any }) => {
         try {
+
             const validatedData = await UserJoiSchema.login.parseAsync({ email, password })
             const deviceId = await z.string().length(64).transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
+
 
             const user = await UsersModel.findOne({
                 where: { email },
@@ -522,7 +525,6 @@ export class UsersController {
                     }
                 }
 
-
                 return {
                     user: user.toJSON(),
                     sid: session.toJSON().sid,
@@ -530,26 +532,23 @@ export class UsersController {
                     needVerification: !session.toJSON().verified
                 }
             }
-
-            const { privateKey, publicKey } = await RSA.generateKeysAsync()
-            const encryptedPrivateKey = await AES.encrypt(privateKey, ZERO_ENCRYPTION_KEY)
+            const key = await AES.generateKey()
+            const signingKey = await AES.encrypt(key, ZERO_ENCRYPTION_KEY)
 
             const sid = `${generate()}${generate()}${generate()}`
             const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
-            const token = jwt.sign({ sid, publicKey, username: user.toJSON().username }, ZERO_ENCRYPTION_KEY);
-
+            const token = jwt.sign({ sid, signingKey: signingKey, username: user.toJSON().username }, ZERO_ENCRYPTION_KEY);
 
             const sessionCreated = await SessionModel.create({
                 sid,
                 verified: session ? true : false,
                 deviceId,
+                signingKey,
                 expoNotificationToken: req.headers.exponotificationtoken || null,
                 jwt: token,
                 userId: user.dataValues.id,
                 expires,
-                data: req.headers.device ? JSON.stringify(req.headers.device) : {},
-                publicKey,
-                privateKey: encryptedPrivateKey
+                data: req.headers.device ? JSON.stringify(req.headers.device) : {}
             })
 
             const code = GENERATE_SIX_DIGIT_TOKEN()
@@ -568,10 +567,10 @@ export class UsersController {
             console.log({ code });
             return {
                 sid: sessionCreated.toJSON().sid,
+                signingKey: sessionCreated.toJSON().signingKey,
                 token,
                 code,
                 signature,
-                publicKey,
                 needVerification: true
             }
 

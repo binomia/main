@@ -1,8 +1,6 @@
 import { DATE, STRING, JSONB, TEXT, BOOLEAN } from "sequelize"
 import { db } from "@/config"
 
-
-
 const SessionModel = db.define('sessions', {
 	verified: {
 		type: BOOLEAN,
@@ -14,11 +12,7 @@ const SessionModel = db.define('sessions', {
 	jwt: TEXT,
 	expires: DATE,
 	data: JSONB,
-	publicKey: {
-		type: TEXT,
-		allowNull: false,
-	},
-	privateKey: {
+	signingKey: {
 		type: TEXT,
 		allowNull: false
 	}

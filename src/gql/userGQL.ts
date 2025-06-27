@@ -110,9 +110,9 @@ const type = () => {
         type LoginType {
             user: UserType
             sid: String
+            signingKey: String
             token: String
             code: String
-            publicKey: String
             needVerification: Boolean
             signature: String
         }
@@ -123,7 +123,7 @@ const type = () => {
         
          type SessionType {
             id: Int
-            publicKey: String
+            signingKey: String
             fullName: String
             username: String
             phone: String

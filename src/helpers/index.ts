@@ -255,6 +255,8 @@ export const checkForProtectedRequests = async (req: any) => {
         const token = await z.string().min(1).transform((val) => val.trim()).parseAsync(req.headers["authorization"]);
         const jwtToken = token.split(' ')[1];
 
+
+
         const jwtVerifyAsync = new Promise((resolve, reject) => {
             jwt.verify(jwtToken, ZERO_ENCRYPTION_KEY, (err: any, payload: any) => {
                 if (err) {
@@ -304,19 +306,25 @@ export const checkForProtectedRequests = async (req: any) => {
                 }]
             })
 
+
+
             if (!session)
                 throw new GraphQLError("INVALID_SESSION: No session found")
 
-            if (jwtToken !== session.toJSON().jwt || deviceid !== session.dataValues.deviceId)
+            const sessionJSON = session.toJSON()
+            if (jwtToken !== sessionJSON.jwt || deviceid !== sessionJSON.deviceId)
                 throw new Error("INVALID_SESSION: Invalid token data")
-
-            else
+            
+            else 
                 req.session = session.toJSON()
+            
 
             await redis.set(`session@${jwtData.sid}`, JSON.stringify(session.toJSON()), 'EX', 10)
             return session.toJSON()
 
         }).catch((error: any) => {
+            console.log({ error });
+
             const message = error.message === "jwt expired" ? "INVALID_SESSION: Session expired" : error.message
             throw new GraphQLError(message, {
                 extensions: {

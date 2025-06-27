@@ -76,10 +76,10 @@ export class TransactionsController {
             span.addEvent("Starting transaction creation");
             span.setAttribute("graphql.mutation.data", JSON.stringify(message));
 
-            const { user, account, sid, userId, privateKey } = await checkForProtectedRequests(req);
+            const { user, account, sid, userId, signingKey } = await checkForProtectedRequests(req);
 
-            const decryptedPrivateKey = await AES.decrypt(privateKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await RSA.decryptAsync(message, decryptedPrivateKey)
+            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
@@ -160,9 +160,8 @@ export class TransactionsController {
                     platform,
                 }
             }
-
+            console.log("Queue data");
             const encryptedData = await AES.encrypt(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
-
             await transactionQueue.add(jobId, encryptedData, {
                 jobId,
                 attempts: 3,
@@ -177,6 +176,9 @@ export class TransactionsController {
                     age: 60 * 30 // 24 hours
                 },
             })
+
+            console.log("Transaction queued");
+            
 
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
@@ -478,12 +480,12 @@ export class TransactionsController {
         try {
             const session = await checkForProtectedRequests(context.req);
             const fields = getQueryResponseFields(fieldNodes, 'transactions')
-            const { user } = session     
-            
+            const { user } = session
+
             // console.log({
             //     headers: context.req.headers
             // });
-            
+
 
             const _pageSize = pageSize > 50 ? 50 : pageSize
             const limit = _pageSize;
