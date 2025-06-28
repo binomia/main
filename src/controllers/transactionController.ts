@@ -197,10 +197,12 @@ export class TransactionsController {
 
     static createRequestTransaction = async (_: unknown, { message }: { message: string }, context: any) => {
         try {
-            const { user, userId, sid: sessionId } = await checkForProtectedRequests(context.req);
+            const { user, userId, sid: sessionId, signingKey } = await checkForProtectedRequests(context.req);
             const { deviceid, ipaddress, platform } = context.req.headers
 
-            const decryptedMessage = await AES.decrypt(message, ZERO_ENCRYPTION_KEY)
+            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
+
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
@@ -484,11 +486,6 @@ export class TransactionsController {
             const session = await checkForProtectedRequests(context.req);
             const fields = getQueryResponseFields(fieldNodes, 'transactions')
             const { user } = session
-
-            // console.log({
-            //     headers: context.req.headers
-            // });
-
 
             const _pageSize = pageSize > 50 ? 50 : pageSize
             const limit = _pageSize;

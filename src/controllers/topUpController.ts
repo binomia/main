@@ -1,4 +1,4 @@
-import { checkForProtectedRequests, getQueryResponseFields } from '@/helpers'
+import { checkForProtectedRequests, getQueryResponseFields, getWaitingTopUps } from '@/helpers'
 import { GraphQLError } from 'graphql';
 import { TopUpsModel, UsersModel, TopUpCompanyModel, TopUpPhonesModel } from '@/models';
 import { Op } from 'sequelize';
@@ -53,10 +53,7 @@ export class TopUpController {
             const offset = (page - 1) * _pageSize;
             const limit = _pageSize;
 
-            const cachedTopUps = await redis.get(`topups:${userId}:${phoneId}:${page}:${pageSize}`)
-            if (cachedTopUps)
-                return JSON.parse(cachedTopUps)
-
+            const waitingTopUps = await getWaitingTopUps({ userId, queue: topUpQueue }).catch(() => [])
             const tupups = await TopUpsModel.findAll({
                 limit,
                 offset,
@@ -86,14 +83,10 @@ export class TopUpController {
                 ]
             })
 
-            const topUpQueued = await redis.get(`queuedTopUps:${userId}`)
-            const parsedTopUps: any[] = topUpQueued ? JSON.parse(topUpQueued) : []
-            const allTopUps = [...tupups, ...parsedTopUps]
+            console.log(JSON.stringify({ waitingTopUps }, null, 2));
 
-            if (tupups.length > 0)
-                await redis.set(`topups:${userId}:${phoneId}:${page}:${pageSize}`, JSON.stringify(allTopUps), 'EX', 10)
 
-            return allTopUps
+            return [...tupups, ...waitingTopUps]
 
         } catch (error: any) {
             throw new GraphQLError(error.message);
@@ -103,23 +96,20 @@ export class TopUpController {
     static recentTopUps = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
         try {
             try {
-                const session = await checkForProtectedRequests(context.req);
+                const {userId} = await checkForProtectedRequests(context.req);
                 const fields = getQueryResponseFields(fieldNodes, 'topups')
 
                 const _pageSize = pageSize > 50 ? 50 : pageSize
                 const offset = (page - 1) * _pageSize;
                 const limit = _pageSize;
 
-                const cachedTopUps = await redis.get(`recentTopUps:${session.userId}:${page}:${pageSize}`)
-                if (cachedTopUps)
-                    return JSON.parse(cachedTopUps)
-
+                const waitingTopUps = await getWaitingTopUps({ userId, queue: topUpQueue }).catch(() => [])
                 const tupups = await TopUpsModel.findAll({
                     limit,
                     offset,
                     order: [['createdAt', 'DESC']],
                     attributes: fields['topups'],
-                    where: { userId: session.userId },
+                    where: { userId },
                     include: [
                         {
                             model: UsersModel,
@@ -137,11 +127,8 @@ export class TopUpController {
                         }
                     ]
                 })
-
-                if (tupups.length > 0)
-                    await redis.set(`recentTopUps:${session.userId}:${page}:${pageSize}`, JSON.stringify(tupups), 'EX', 10)
-
-                return tupups
+               
+                return  [...tupups, ...waitingTopUps]
 
             } catch (error: any) {
                 throw new GraphQLError(error.message);
@@ -194,43 +181,18 @@ export class TopUpController {
 
     static createTopUp = async (_: unknown, { message }: { message: string }, context: any) => {
         try {
-            const { userId, user } = await checkForProtectedRequests(context.req);
+            const { userId, user, signingKey, } = await checkForProtectedRequests(context.req);
 
-            const decryptedMessage = await AES.decrypt(message, ZERO_ENCRYPTION_KEY)
+            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
             const topUpData = await TopUpSchema.createTopUp.parseAsync(data)
             const recurrenceData = await TopUpSchema.recurrenceTopUp.parseAsync(recurrence)
 
             const referenceId = `${shortUUID.generate()}${shortUUID.generate()}`
-            
-
             const jobId = `queueTopUp@${shortUUID.generate()}${shortUUID.generate()}`
 
-            const transactionResponse = {
-                userId,
-                jobId,
-                repeatJobKey: jobId,
-                transactionId: referenceId,
-                "amount": topUpData.amount,
-                "deliveredAmount": topUpData.amount,
-                "voidedAmount": topUpData.amount,
-                "transactionType": "topup",
-                "currency": "DOP",
-                "status": "waiting",
-                "location": topUpData.location,
-                "createdAt": Date.now().toString(),
-                "updatedAt": Date.now().toString(),
-                "from": {
-                    ...user.account,
-                    user
-                },
-                "to": {
-                    ...user.account,
-                    user
-                }
-            }
-            
             const encryptedData = await AES.encrypt(JSON.stringify({
                 referenceId,
                 ...topUpData,
@@ -238,17 +200,16 @@ export class TopUpController {
                 senderUsername: user.username,
                 recurrenceData,
                 userId,
-                response: transactionResponse
             }), ZERO_ENCRYPTION_KEY)
 
 
-           await topUpQueue.add(jobId, encryptedData, {
+            await topUpQueue.add(jobId, encryptedData, {
                 jobId,
                 removeOnComplete: { age: 20 },
                 removeOnFail: { age: 60 * 30 }
             });
 
-            return transactionResponse
+            return topUpData.response
 
         } catch (error: any) {
             throw new GraphQLError(error.message);

@@ -37,6 +37,31 @@ export const getRecurrenceTopUps = async ({ userId, queue }: { userId: string, q
         throw new Error(error);
     }
 }
+export const getWaitingTopUps = async ({ userId, queue }: { userId: string, queue: Queue }) => {
+    try {
+        const getJobs = await queue.getJobs(["waiting"])
+        const jobs = await Promise.all(
+            getJobs.map(async job => {
+                const jsonData = job.asJSON()
+
+                const decryptedData = await AES.decrypt(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
+                const response = JSON.parse(decryptedData).response
+
+                if (response?.userId === userId)
+                    return response
+
+                return []
+
+            }).flat()
+        )
+
+        return jobs.flat()
+
+    } catch (error: any) {
+        console.log({ error });
+        throw new Error(error);
+    }
+}
 export const getRecurrenceTransactions = async ({ userId, queue }: { userId: string, queue: Queue }) => {
     try {
         const getJobs = await queue.getJobs(["delayed"])

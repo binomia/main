@@ -15,7 +15,29 @@ export class TopUpSchema {
         phone: z.string(),
         amount: z.number().positive(),
         companyId: z.number(),
-        location: TopUpSchema.topUpLocation
+        location: TopUpSchema.topUpLocation,
+        response: z.object({
+            userId: z.number(),
+            amount: z.number().positive(),
+            status: z.string(),
+            createdAt: z.string(),
+            updatedAt: z.string(),
+            user: z.object({
+                fullName: z.string(),
+            }),
+            company: z.object({
+                logo: z.string(),
+            }),
+            phone: z.object({
+                fullName: z.string(),
+                phone: z.string(),
+                lastUpdated: z.string(),
+                createdAt: z.string(),
+                updatedAt: z.string(),
+                companyId: z.number(),
+                userId: z.number()
+            })
+        })
     })
 
     static recurrenceTopUp = z.object({

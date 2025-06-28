@@ -225,7 +225,7 @@ const createBinomiaUser = async () => {
 
 
 export const seedDatabase = async () => {
-    await createUsers()
-    // await createTopUpCompany()
+    // await createUsers()
+    await createTopUpCompany()
     // await createTransactions()
 }
