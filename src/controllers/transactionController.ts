@@ -82,6 +82,9 @@ export class TransactionsController {
             const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
+            console.log({ data });
+
+
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
             const recurrenceData = await TransactionJoiSchema.recurrenceTransaction.parseAsync(recurrence)
 
@@ -178,7 +181,7 @@ export class TransactionsController {
             })
 
             console.log("Transaction queued");
-            
+
 
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });

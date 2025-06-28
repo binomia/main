@@ -58,6 +58,7 @@ const type = () => {
         type TransactionLocationType {
             latitude: Float
             longitude: Float
+            uri: String
             neighbourhood: String
             sublocality: String
             municipality: String

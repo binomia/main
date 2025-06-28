@@ -29,6 +29,7 @@ export class TransactionJoiSchema {
         sublocality: z.string().nullish().transform(v => v ?? ""),
         municipality: z.string().nullish().transform(v => v ?? ""),
         fullArea: z.string().nullish().transform(v => v ?? ""),
+        uri: z.string().nullish().transform(v => v ?? "")
     })
 
     static createTransaction = z.object({
