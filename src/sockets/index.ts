@@ -1,7 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
-import { pubClient, subClient } from "@/redis";
 import { accountSockets } from "./global";
 
 
@@ -11,7 +10,6 @@ export const initSocket = async (httpServer: HttpServer) => {
             origin: "*"
         }
     });
-    io.adapter(createAdapter(pubClient, subClient));
     io.attach(httpServer);
 
     const clientsMap = new Map();
@@ -29,10 +27,4 @@ export const initSocket = async (httpServer: HttpServer) => {
             // clientsMap.delete(clientId);
         });
     });
-
-
-    await Promise.all([
-        pubClient.connect(),
-        subClient.connect()
-    ])
 }

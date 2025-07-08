@@ -82,9 +82,6 @@ export class TransactionsController {
             const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
-            console.log({ data });
-
-
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
             const recurrenceData = await TransactionJoiSchema.recurrenceTransaction.parseAsync(recurrence)
 
@@ -163,7 +160,7 @@ export class TransactionsController {
                     platform,
                 }
             }
-            console.log("Queue data");
+
             const encryptedData = await AES.encrypt(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
             await transactionQueue.add(jobId, encryptedData, {
                 jobId,
@@ -179,9 +176,6 @@ export class TransactionsController {
                     age: 60 * 30 // 24 hours
                 },
             })
-
-            console.log("Transaction queued");
-
 
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
@@ -302,8 +296,6 @@ export class TransactionsController {
             return transactionResponse
 
         } catch (error: any) {
-            console.log({ error });
-
             throw new GraphQLError(error.message);
         }
     }

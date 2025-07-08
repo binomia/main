@@ -16,8 +16,6 @@ export class GlobalController {
                 ZERO_SIGN_PRIVATE_KEY
             }))
 
-            console.log({ hashData, ZERO_ENCRYPTION_KEY, hash });
-
             const signature = await RSA.sign(hashData, ZERO_SIGN_PRIVATE_KEY)
             return signature
 

@@ -83,9 +83,6 @@ export class TopUpController {
                 ]
             })
 
-            console.log(JSON.stringify({ waitingTopUps }, null, 2));
-
-
             return [...tupups, ...waitingTopUps]
 
         } catch (error: any) {

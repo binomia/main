@@ -3,12 +3,9 @@ import { NOTIFICATION_SERVER_URL } from "@/constants";
 import axios from "axios";
 
 const notificationClient = new JSONRPCClient(async (jsonRPCRequest) => {
-    if (NOTIFICATION_SERVER_URL === undefined) {
+    if (NOTIFICATION_SERVER_URL === undefined)
         throw new Error("NOTIFICATION_SERVER_URL is not defined");
-    }
 
-    console.log({NOTIFICATION_SERVER_URL});
-    
 
     return axios.post(NOTIFICATION_SERVER_URL, jsonRPCRequest).then((response) => {
         if (response.status === 200) {
@@ -26,7 +23,6 @@ export const notificationServer = async (method: string, params: JSONRPCParams) 
         return response
 
     } catch (error: any) {
-        console.log({ error });
         throw new Error(error);
     }
 }
