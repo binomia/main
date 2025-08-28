@@ -15,7 +15,7 @@ import { formatError } from "@/helpers";
 import { PORT } from "@/constants";
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import { register } from 'prom-client';
+import { collectDefaultMetrics, register } from 'prom-client';
 import { initTracing } from "@/tracing";
 import { Span, trace } from '@opentelemetry/api';
 
@@ -29,7 +29,7 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // Collect default Node.js metrics
-// collectDefaultMetrics();
+collectDefaultMetrics();
 initTracing();
 const metrics = new PrometheusMetrics()
 
