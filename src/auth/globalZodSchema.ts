@@ -29,6 +29,9 @@ export class GlobalZodSchema {
         ZERO_SIGN_PUBLIC_KEY: z.string(),
         REDIS_HOST: z.string(),
         REDIS_PORT: z.string(),
-        PORT: z.string()
+        PORT: z.string(),
+        LOKI_USERNAME: z.string(),
+        LOKI_PASSWORD: z.string(),
+        LOKI_URL: z.string(),
     })
 }

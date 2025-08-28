@@ -10,6 +10,7 @@ import { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { AES, HASH, RSA } from 'cryptografia';
 import { connection } from '@/redis';
 import { Queue } from 'bullmq';
+import { Loki } from '@/loki';
 
 
 const transactionQueue = new Queue("transactions", { connection });
@@ -179,6 +180,17 @@ export class TransactionsController {
 
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
+
+            Loki.push("Transaction created", {
+                "transactionId": transactionId,
+                "from": user.username,
+                "to": validatedData.receiver,
+                "amount": validatedData.amount,
+                "location": {
+                    "latitude": validatedData.location.latitude,
+                    "longitude": validatedData.location.longitude
+                }
+            })
 
             return transactionResponse
 
