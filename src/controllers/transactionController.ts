@@ -11,6 +11,8 @@ import { AES, HASH, RSA } from 'cryptografia';
 import { connection } from '@/redis';
 import { Queue } from 'bullmq';
 import { Loki } from '@/loki';
+import { performance } from 'perf_hooks';
+import { log } from 'console';
 
 
 const transactionQueue = new Queue("transactions", { connection });
@@ -83,6 +85,9 @@ export class TransactionsController {
             const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
             const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
+            
+            span.setStatus({ code: SpanStatusCode.OK });
+            span.end();
 
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
             const recurrenceData = await TransactionJoiSchema.recurrenceTransaction.parseAsync(recurrence)
