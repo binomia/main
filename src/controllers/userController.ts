@@ -125,7 +125,7 @@ export class UsersController {
                 ]
             })
 
-            const decryptedCardData = userData.card ? await AES.decrypt(userData.card.data, ZERO_ENCRYPTION_KEY) : null
+            const decryptedCardData = userData.card ? await AES.decryptAsync(userData.card.data, ZERO_ENCRYPTION_KEY) : null
             const card = decryptedCardData ? JSON.parse(decryptedCardData) : null
 
             return Object.assign({}, userData, {
@@ -140,7 +140,7 @@ export class UsersController {
 
     static sessionUser = async (_: unknown, ___: any, { metrics, req }: { metrics: PrometheusMetrics, req: any }) => {
         try {
-            const session = await checkForProtectedRequests(req);            
+            const session = await checkForProtectedRequests(req);
 
             metrics.sessionUser.inc()
             return Object.assign({}, session.user, {
@@ -397,7 +397,7 @@ export class UsersController {
             })
 
             const key = await AES.generateKey()
-            const signingKey = await AES.encrypt(key, ZERO_ENCRYPTION_KEY)
+            const signingKey = await AES.encryptAsync(key, ZERO_ENCRYPTION_KEY)
 
             const sid = `${generate()}${generate()}${generate()}`
             const token = jwt.sign({

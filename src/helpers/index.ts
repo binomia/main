@@ -32,7 +32,7 @@ export const getRecurrenceTopUps = async ({ userId, queue }: { userId: string, q
             getJobs.map(async job => {
                 const jsonData = job.asJSON()
 
-                const decryptedData = await AES.decrypt(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
                 const response = JSON.parse(decryptedData).response
 
                 if (response?.userId === userId && response.isRecurrence)
@@ -57,7 +57,7 @@ export const getWaitingTopUps = async ({ userId, queue }: { userId: string, queu
             getJobs.map(async job => {
                 const jsonData = job.asJSON()
 
-                const decryptedData = await AES.decrypt(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
                 const response = JSON.parse(decryptedData).response
 
                 if (response?.userId === userId)
@@ -83,7 +83,7 @@ export const getRecurrenceTransactions = async ({ userId, queue }: { userId: str
             getJobs.map(async job => {
                 const jsonData = job.asJSON()
 
-                const decryptedData = await AES.decrypt(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
                 const response = JSON.parse(decryptedData).response
 
                 if (response?.userId === userId && response.isRecurrence)
@@ -106,7 +106,7 @@ export const getWaitingTransactions = async ({ userId, queue }: { userId: string
         const jobs = await Promise.all(
             getJobs.map(async job => {
                 const jsonData = job.asJSON()
-                const decryptedData = await AES.decrypt(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(JSON.parse(jsonData.data), ZERO_ENCRYPTION_KEY)
 
                 const response = JSON.parse(decryptedData).response
                 if (response?.userId === userId)
@@ -350,10 +350,10 @@ export const checkForProtectedRequests = async (req: any) => {
             const sessionJSON = session.toJSON()
             if (jwtToken !== sessionJSON.jwt || deviceid !== sessionJSON.deviceId)
                 throw new Error("INVALID_SESSION: Invalid token data")
-            
-            else 
+
+            else
                 req.session = session.toJSON()
-            
+
 
             await redis.set(`session@${jwtData.sid}`, JSON.stringify(session.toJSON()), 'EX', 10)
             return session.toJSON()

@@ -93,7 +93,7 @@ export class TopUpController {
     static recentTopUps = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
         try {
             try {
-                const {userId} = await checkForProtectedRequests(context.req);
+                const { userId } = await checkForProtectedRequests(context.req);
                 const fields = getQueryResponseFields(fieldNodes, 'topups')
 
                 const _pageSize = pageSize > 50 ? 50 : pageSize
@@ -124,8 +124,8 @@ export class TopUpController {
                         }
                     ]
                 })
-               
-                return  [...tupups, ...waitingTopUps]
+
+                return [...tupups, ...waitingTopUps]
 
             } catch (error: any) {
                 throw new GraphQLError(error.message);
@@ -180,8 +180,8 @@ export class TopUpController {
         try {
             const { userId, user, signingKey, } = await checkForProtectedRequests(context.req);
 
-            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
+            const decryptedPrivateKey = await AES.decryptAsync(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decryptAsync(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
             const topUpData = await TopUpSchema.createTopUp.parseAsync(data)
@@ -190,7 +190,7 @@ export class TopUpController {
             const referenceId = `${shortUUID.generate()}${shortUUID.generate()}`
             const jobId = `queueTopUp@${shortUUID.generate()}${shortUUID.generate()}`
 
-            const encryptedData = await AES.encrypt(JSON.stringify({
+            const encryptedData = await AES.encryptAsync(JSON.stringify({
                 referenceId,
                 ...topUpData,
                 phoneNumber: topUpData.phone,

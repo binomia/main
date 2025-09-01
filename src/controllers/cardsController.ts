@@ -32,7 +32,7 @@ export class CardsController {
                 throw new GraphQLError('The given user does not have a card linked');
 
 
-            const decryptedCardData = await AES.decrypt(card?.dataValues?.data, ZERO_ENCRYPTION_KEY)
+            const decryptedCardData = await AES.decryptAsync(card?.dataValues?.data, ZERO_ENCRYPTION_KEY)
             const cardData = Object.assign({}, card.toJSON(), JSON.parse(decryptedCardData))
 
             return cardData
@@ -85,7 +85,7 @@ export class CardsController {
             if (cardExist)
                 throw new GraphQLError('Tarjeta ya esta vinculada');
 
-            const encryptedCardData = await AES.encrypt(JSON.stringify(validatedData), ZERO_ENCRYPTION_KEY)
+            const encryptedCardData = await AES.encryptAsync(JSON.stringify(validatedData), ZERO_ENCRYPTION_KEY)
 
             if (validatedData.isPrimary)
                 await CardsModel.update({ isPrimary: false }, {

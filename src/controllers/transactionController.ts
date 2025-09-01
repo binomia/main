@@ -7,12 +7,11 @@ import { TransactionJoiSchema } from '@/auth/transactionJoiSchema';
 import { CRON_JOB_BIWEEKLY_PATTERN, CRON_JOB_MONTHLY_PATTERN, CRON_JOB_WEEKLY_PATTERN, ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY } from '@/constants';
 import { Op } from 'sequelize';
 import { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
-import { AES, HASH, RSA } from 'cryptografia';
+import { AES, ECC, HASH, RSA } from 'cryptografia';
 import { connection } from '@/redis';
 import { Queue } from 'bullmq';
 import { Loki } from '@/loki';
 import { performance } from 'perf_hooks';
-import { log } from 'console';
 
 
 const transactionQueue = new Queue("transactions", { connection });
@@ -74,6 +73,7 @@ export class TransactionsController {
     }
 
     static createTransaction = async (_: unknown, { message }: { message: string }, { req, tracer }: { req: any, metrics: PrometheusMetrics, tracer: Tracer }) => {
+        const start = performance.now();
         const span: Span = tracer.startSpan("createTransaction");
         try {
             span.addEvent("Starting transaction creation");
@@ -82,10 +82,10 @@ export class TransactionsController {
             const { user, sid, userId, signingKey } = await checkForProtectedRequests(req);
             const { account } = user
 
-            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
+            const decryptedPrivateKey = await AES.decryptAsync(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decryptAsync(message, decryptedPrivateKey)
             const { data, recurrence } = JSON.parse(decryptedMessage)
-            
+
             span.setStatus({ code: SpanStatusCode.OK });
             span.end();
 
@@ -94,7 +94,7 @@ export class TransactionsController {
 
             const messageToSign = `${validatedData.receiver}&${user.username}@${validatedData.amount}@${ZERO_ENCRYPTION_KEY}`
             const hash = await HASH.sha256Async(messageToSign)
-            const signature = await RSA.sign(hash, ZERO_SIGN_PRIVATE_KEY)
+            const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
 
             const transactionId = `${shortUUID.generate()}${shortUUID.generate()}`
             const jobId = `queueTransaction@${transactionId}`
@@ -142,11 +142,11 @@ export class TransactionsController {
                 "createdAt": Date.now().toString(),
                 "updatedAt": Date.now().toString(),
                 "from": {
-                    ...account,
-                    user
+                    // ...account,
+                    // user
                 },
                 "to": {
-                    ...receiverAccount.toJSON()
+                    // ...receiverAccount.toJSON()
                 }
             }
 
@@ -207,7 +207,7 @@ export class TransactionsController {
                 }
             }
 
-            const encryptedData = await AES.encrypt(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
+            const encryptedData = await AES.encryptAsync(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
             await Promise.all([
                 transactionQueue.add(jobId, encryptedData, {
                     jobId,
@@ -243,6 +243,10 @@ export class TransactionsController {
                 transactionType: validatedData.transactionType,
             })
 
+            const end = performance.now();
+            span.addEvent(`Transaction created in ${end - start}ms`);
+            console.log(`\nTransaction created in ${end - start}ms\n`);
+
             return transactionResponse
 
         } catch (error: any) {
@@ -257,8 +261,8 @@ export class TransactionsController {
             const { user, userId, sid: sessionId, signingKey } = await checkForProtectedRequests(context.req);
             const { deviceid, ipaddress, platform } = context.req.headers
 
-            const decryptedPrivateKey = await AES.decrypt(signingKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await AES.decrypt(message, decryptedPrivateKey)
+            const decryptedPrivateKey = await AES.decryptAsync(signingKey, ZERO_ENCRYPTION_KEY)
+            const decryptedMessage = await AES.decryptAsync(message, decryptedPrivateKey)
 
             const { data, recurrence } = JSON.parse(decryptedMessage)
 
@@ -338,7 +342,7 @@ export class TransactionsController {
 
             }
 
-            const encryptedData = await AES.encrypt(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
+            const encryptedData = await AES.encryptAsync(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
             const jobId = `queueRequestTransaction@${transactionId}`
 
             await transactionQueue.add(jobId, encryptedData, {
@@ -727,7 +731,7 @@ export class TransactionsController {
 
             if (queueType === "topUp") {
                 const oldJob: any = await topUpQueue.getJobScheduler(repeatJobKey);
-                const decryptedData = await AES.decrypt(oldJob.template.data, ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(oldJob.template.data, ZERO_ENCRYPTION_KEY)
                 const data = JSON.parse(decryptedData)
 
                 const updatedData = Object.assign(data, {
@@ -737,7 +741,7 @@ export class TransactionsController {
                         jobTime
                     }
                 })
-                const updatedEncryptedData = await AES.encrypt(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
+                const updatedEncryptedData = await AES.encryptAsync(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
                 const pattern = jobName === "biweekly" ? CRON_JOB_BIWEEKLY_PATTERN : jobName === "monthly" ? CRON_JOB_MONTHLY_PATTERN[jobTime as keyof typeof CRON_JOB_MONTHLY_PATTERN] : CRON_JOB_WEEKLY_PATTERN[jobTime as keyof typeof CRON_JOB_WEEKLY_PATTERN]
                 const job = await topUpQueue.upsertJobScheduler(repeatJobKey, { pattern }, {
                     name: jobName,
@@ -756,7 +760,7 @@ export class TransactionsController {
             }
             else {
                 const oldJob: any = await transactionQueue.getJobScheduler(repeatJobKey);
-                const decryptedData = await AES.decrypt(oldJob.template.data, ZERO_ENCRYPTION_KEY)
+                const decryptedData = await AES.decryptAsync(oldJob.template.data, ZERO_ENCRYPTION_KEY)
                 const data = JSON.parse(decryptedData)
 
                 const updatedData = Object.assign(data, {
@@ -767,7 +771,7 @@ export class TransactionsController {
                     }
                 })
 
-                const updatedEncryptedData = await AES.encrypt(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
+                const updatedEncryptedData = await AES.encryptAsync(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
 
                 const pattern = jobName === "biweekly" ? CRON_JOB_BIWEEKLY_PATTERN : jobName === "monthly" ? CRON_JOB_MONTHLY_PATTERN[jobTime as keyof typeof CRON_JOB_MONTHLY_PATTERN] : CRON_JOB_WEEKLY_PATTERN[jobTime as keyof typeof CRON_JOB_WEEKLY_PATTERN]
                 const job = await transactionQueue.upsertJobScheduler(repeatJobKey, { pattern }, {
