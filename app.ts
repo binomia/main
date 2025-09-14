@@ -16,7 +16,7 @@ import { PORT } from "@/constants";
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { collectDefaultMetrics, register } from 'prom-client';
-import { initTracing } from "@/tracing";
+// import { initTracing } from "@/tracing";
 import { Span, trace } from '@opentelemetry/api';
 
 // Define the Context Type
@@ -29,8 +29,8 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // Collect default Node.js metrics
-collectDefaultMetrics();
-initTracing();
+
+// initTracing();
 const metrics = new PrometheusMetrics()
 
 
@@ -95,7 +95,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
             csrfPrevention: false,
             cache: new KeyvAdapter(keyvRedis),
             formatError,
-            
+
             plugins: [
                 tracingPlugin,
                 errorHandlingPlugin,
@@ -107,6 +107,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
 
         //  2) Create a custom /metrics endpoint
         app.get('/metrics', async (req, res) => {
+            collectDefaultMetrics();
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());
         });

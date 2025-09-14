@@ -1,25 +1,19 @@
-import { JSONRPCClient, JSONRPCParams } from "json-rpc-2.0";
-import { NOTIFICATION_SERVER_URL } from "@/constants";
-import axios from "axios";
+import { NOTIFICATION_SERVER_URL, ZERO_ENCRYPTION_KEY } from "@/constants";
+import { Client, LOAD_BALANCER } from "cromio"
 
-const notificationClient = new JSONRPCClient(async (jsonRPCRequest) => {
-    if (NOTIFICATION_SERVER_URL === undefined)
-        throw new Error("NOTIFICATION_SERVER_URL is not defined");
-
-
-    return axios.post(NOTIFICATION_SERVER_URL, jsonRPCRequest).then((response) => {
-        if (response.status === 200) {
-            notificationClient.receive(response.data);
-
-        } else if (jsonRPCRequest.id !== undefined) {
-            return Promise.reject(new Error(response.statusText));
+const client = new Client({
+    loadBalancerStrategy: LOAD_BALANCER.BEST_BIASED,
+    servers: [
+        {
+            url: NOTIFICATION_SERVER_URL,
+            secretKey: ZERO_ENCRYPTION_KEY,
         }
-    })
-})
+    ]
+});
 
-export const notificationServer = async (method: string, params: JSONRPCParams) => {
+export const notificationServer = async (trigger: string, params: any) => {
     try {
-        const response = await notificationClient.request(method, params);
+        const response = await client.trigger(trigger, params);
         return response
 
     } catch (error: any) {

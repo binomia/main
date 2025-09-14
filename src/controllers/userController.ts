@@ -13,7 +13,7 @@ import { z } from 'zod'
 import { Counter } from 'prom-client';
 import { notificationServer } from '@/rpc/notificationRPC';
 import PrometheusMetrics from '@/metrics/PrometheusMetrics';
-import { AES, HASH, RSA } from "cryptografia"
+import { AES, HASH, ECC } from "cryptografia"
 
 export class UsersController {
     static users = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
@@ -396,7 +396,7 @@ export class UsersController {
                 bloodType: validatedData.bloodType
             })
 
-            const key = await AES.generateKey()
+            const key = await AES.generateKeyAsync()
             const signingKey = await AES.encryptAsync(key, ZERO_ENCRYPTION_KEY)
 
             const sid = `${generate()}${generate()}${generate()}`
@@ -454,10 +454,8 @@ export class UsersController {
 
     static login = async (_: unknown, { email, password }: { email: string, password: string }, { res, req }: { res: any, req: any }) => {
         try {
-
             const validatedData = await UserJoiSchema.login.parseAsync({ email, password })
             const deviceId = await z.string().length(64).transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
-
 
             const user = await UsersModel.findOne({
                 where: { email },
@@ -499,6 +497,7 @@ export class UsersController {
                 }
             })
 
+
             if (session) {
                 if (!session.toJSON().verified) {
                     const code = GENERATE_SIX_DIGIT_TOKEN()
@@ -507,14 +506,23 @@ export class UsersController {
                         code,
                         ZERO_ENCRYPTION_KEY,
                     }))
-
-                    const signature = await RSA.sign(hash, ZERO_SIGN_PRIVATE_KEY)
+                    const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
+                    
                     await notificationServer('sendVerificationCode', {
                         email,
                         code
+                    }).catch((error) => {
+                        console.log({ sendVerificationCodeError: error });
                     })
+                    console.log({
+                        signature,
+                        sid: session.toJSON().sid,
+                        code,
+                        ZERO_ENCRYPTION_KEY,
+                        hash,
+                        ZERO_SIGN_PRIVATE_KEY
+                    });
 
-                    console.log({ code });
                     return {
                         user: user.toJSON(),
                         sid: session.toJSON().sid,
@@ -532,8 +540,8 @@ export class UsersController {
                     needVerification: !session.toJSON().verified
                 }
             }
-            const key = await AES.generateKey()
-            const signingKey = await AES.encrypt(key, ZERO_ENCRYPTION_KEY)
+            const key = await AES.generateKeyAsync()
+            const signingKey = await AES.encryptAsync(key, ZERO_ENCRYPTION_KEY)
 
             const sid = `${generate()}${generate()}${generate()}`
             const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
@@ -558,13 +566,12 @@ export class UsersController {
                 ZERO_ENCRYPTION_KEY,
             }))
 
-            const signature = await RSA.sign(hash, ZERO_SIGN_PRIVATE_KEY)
+            const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
             await notificationServer('sendVerificationCode', {
                 email,
                 code
             })
 
-            console.log({ code });
             return {
                 sid: sessionCreated.toJSON().sid,
                 signingKey: sessionCreated.toJSON().signingKey,
@@ -618,7 +625,7 @@ export class UsersController {
                 ZERO_ENCRYPTION_KEY,
             }))
 
-            const verified = await RSA.verify(hash, signature, ZERO_SIGN_PUBLIC_KEY)
+            const verified = await ECC.verifyAsync(hash, signature, ZERO_SIGN_PUBLIC_KEY)
             if (!verified)
                 throw new GraphQLError('Failed to verify session');
 
