@@ -17,7 +17,7 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { collectDefaultMetrics, register } from 'prom-client';
 // import { initTracing } from "@/tracing";
-import { Span, trace } from '@opentelemetry/api';
+import { Span, trace } from '@opentelemetry/api'
 
 // Define the Context Type
 interface Context {
