@@ -245,7 +245,6 @@ export class TransactionsController {
 
             const end = performance.now();
             span.addEvent(`Transaction created in ${end - start}ms`);
-            console.log(`\nTransaction created in ${end - start}ms\n`);
 
             return transactionResponse
 
