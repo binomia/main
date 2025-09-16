@@ -12,7 +12,7 @@ import { resolvers } from './src/gql'
 import { db } from './src/config';
 import { keyvRedis } from "@/redis";
 import { formatError } from "@/helpers";
-import { PORT } from "@/constants";
+import { MAIN_SERVER_PORT } from "@/constants";
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { collectDefaultMetrics, register } from 'prom-client';
@@ -107,7 +107,6 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
 
         //  2) Create a custom /metrics endpoint
         app.get('/metrics', async (req, res) => {
-            collectDefaultMetrics();
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());
         });
@@ -124,8 +123,8 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
             })
         );
 
-        httpServer.listen(PORT || 8000, () => {
-            console.log(`[Main-Server]: worker ${cluster.worker?.id} is running on http://localhost:${PORT}`);
+        httpServer.listen(MAIN_SERVER_PORT || 8000, () => {
+            console.log(`[Main-Server]: worker ${cluster.worker?.id} is running on http://localhost:${MAIN_SERVER_PORT}`);
         })
     }
 })()

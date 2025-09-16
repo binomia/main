@@ -2,7 +2,7 @@ import { GlobalZodSchema } from "@/auth"
 
 const evironmentVariables = GlobalZodSchema.evironmentVariables.parse(process.env)
 export const {
-    PORT,
+    MAIN_SERVER_PORT,
     REDIS_HOST,
     REDIS_PORT,
     SESSION_SECRET_SECRET_KEY,

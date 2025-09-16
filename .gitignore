@@ -1,0 +1,65 @@
+
+certs
+grafana
+postgres
+/apps/Packages/
+
+*.env
+*.log
+*.log.*
+*test.ts
+npm-debug.log*
+
+# Python 
+*__pycache__
+*.pyc
+*.vscode
+.DS_Store
+*venv
+*datasets/
+
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# dependencies
+node_modules/
+
+.turbo
+
+*.css
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# yarn.lock
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*
+
+# typescript
+*.tsbuildinfo
+
+ios
+android
+
+packages/faiss
