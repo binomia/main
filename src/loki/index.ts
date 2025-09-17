@@ -32,8 +32,8 @@ export class Loki {
             );
 
             console.log("Log sent:", res.data);
-        } catch (err: any) {
-            console.error("Error pushing log:", err.response?.data || err.message);
+        } catch (error: any) {
+            console.error({Loki: error?.toString()});
         }
     }
 }
