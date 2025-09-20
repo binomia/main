@@ -7,7 +7,7 @@ import { TransactionJoiSchema } from '@/auth/transactionJoiSchema';
 import { CRON_JOB_BIWEEKLY_PATTERN, CRON_JOB_MONTHLY_PATTERN, CRON_JOB_WEEKLY_PATTERN, ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY } from '@/constants';
 import { Op } from 'sequelize';
 import { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
-import { AES, ECC, HASH, RSA } from 'cryptografia';
+import { AES, ECC, HASH } from 'cryptografia';
 import { connection } from '@/redis';
 import { Queue } from 'bullmq';
 import { Loki } from '@/loki';
@@ -271,7 +271,7 @@ export class TransactionsController {
             const transactionId = `${shortUUID.generate()}${shortUUID.generate()}`
             const messageToSign = `${transactionId}&${validatedData.amount}@${ZERO_ENCRYPTION_KEY}`
             const hash = await HASH.sha256Async(messageToSign)
-            const signature = await RSA.sign(hash, ZERO_SIGN_PRIVATE_KEY)
+            const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
 
             const receiverAccount = await AccountModel.findOne({
                 attributes: { exclude: ['username'] },
@@ -436,7 +436,7 @@ export class TransactionsController {
 
             const messageToSign = `${user.account.id}&${user.id}@${validatedData.amount}@${ZERO_ENCRYPTION_KEY}`
             const hash = await HASH.sha256Async(messageToSign)
-            const signature = await RSA.sign(hash, ZERO_SIGN_PRIVATE_KEY)
+            const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
 
             const responseData = {
                 transactionId,
