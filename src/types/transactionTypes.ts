@@ -33,7 +33,6 @@ export interface TransactionAuthorizationType extends TransactionModelType {
 }
 
 
-
 export type TransactionCreateType = {
     amount: number
     currency: string

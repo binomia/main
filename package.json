@@ -49,7 +49,7 @@
     "card-validator": "^10.0.0",
     "connect-session-sequelize": "^7.1.7",
     "cookie-parser": "^1.4.7",
-    "cromio": "^0.0.14",
+    "cromio": "^0.0.15",
     "cryptografia": "^0.0.16",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",

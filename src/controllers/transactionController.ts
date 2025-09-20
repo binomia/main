@@ -13,10 +13,8 @@ import { Queue } from 'bullmq';
 import { Loki } from '@/loki';
 import { performance } from 'perf_hooks';
 
-
 const transactionQueue = new Queue("transactions", { connection });
 const topUpQueue = new Queue("topups", { connection });
-
 
 export class TransactionsController {
     static transaction = async (_: unknown, { transactionId }: { transactionId: string }, context: any, { fieldNodes }: { fieldNodes: any }) => {
@@ -223,11 +221,13 @@ export class TransactionsController {
                         age: 60 * 30 // 24 hours
                     },
                 }),
-                await insertLadger(ledgerData)
+                insertLadger(ledgerData)
             ]).catch((error: any) => {
                 console.error(error)
                 throw new GraphQLError(error.message);
             })
+
+
 
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
