@@ -6,11 +6,12 @@ import { ZERO_ENCRYPTION_KEY } from '@/constants';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { z } from 'zod'
-import redis from '@/redis';
+import redis, { connection } from '@/redis';
 import * as zlib from 'zlib';
 import { Queue } from 'bullmq';
 import { AES } from 'cryptografia';
 
+export const notificationsQueue = new Queue("notifications", { connection });
 
 export const insertLadger = async ({ sender, receiver }: any) => {
     try {

@@ -3,15 +3,14 @@ import bcrypt from 'bcrypt';
 import KYCModel from '@/models/kycModel';
 import { AccountModel, UsersModel, kycModel, TransactionsModel, CardsModel, SessionModel } from '@/models'
 import { Op } from 'sequelize'
-import { getQueryResponseFields, checkForProtectedRequests, GENERATE_SIX_DIGIT_TOKEN } from '@/helpers'
+import { getQueryResponseFields, checkForProtectedRequests, GENERATE_SIX_DIGIT_TOKEN, notificationsQueue } from '@/helpers'
 import { ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY, ZERO_SIGN_PUBLIC_KEY } from '@/constants'
 import { GraphQLError } from 'graphql';
 import { GlobalZodSchema, UserJoiSchema } from '@/auth';
 import { UserModelType, VerificationDataType } from '@/types';
-import { generate } from 'short-uuid';
+import shortUUID, { generate } from 'short-uuid';
 import { z } from 'zod'
 import { Counter } from 'prom-client';
-import { notificationServer } from '@/rpc/notificationRPC';
 import PrometheusMetrics from '@/metrics/PrometheusMetrics';
 import { AES, HASH, ECC } from "cryptografia"
 
@@ -509,10 +508,27 @@ export class UsersController {
                     }))
 
                     const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
-                    await notificationServer('sendVerificationCode', {
+                    const jobId = `sendVerificationCode@${shortUUID.generate()}${shortUUID.generate()}`
+                    const transactionEncryptedData = await AES.encryptAsync(JSON.stringify({
                         email,
                         code
+                    }), ZERO_ENCRYPTION_KEY);
+
+                    notificationsQueue.add(jobId, transactionEncryptedData, {
+                        jobId,
+                        attempts: 3,
+                        backoff: {
+                            type: 'exponential',
+                            delay: 1000,
+                        },
+                        removeOnComplete: {
+                            age: 20 // 30 minutes
+                        },
+                        removeOnFail: {
+                            age: 60 * 30 // 24 hours
+                        },
                     })
+
 
                     console.log({ code });
                     return {
@@ -559,9 +575,25 @@ export class UsersController {
             }))
 
             const signature = await ECC.signAsync(hash, ZERO_SIGN_PRIVATE_KEY)
-            await notificationServer('sendVerificationCode', {
+            const jobId = `sendVerificationCode@${shortUUID.generate()}${shortUUID.generate()}`
+            const transactionEncryptedData = await AES.encryptAsync(JSON.stringify({
                 email,
                 code
+            }), ZERO_ENCRYPTION_KEY);
+
+            notificationsQueue.add(jobId, transactionEncryptedData, {
+                jobId,
+                attempts: 3,
+                backoff: {
+                    type: 'exponential',
+                    delay: 1000,
+                },
+                removeOnComplete: {
+                    age: 20 // 30 minutes
+                },
+                removeOnFail: {
+                    age: 60 * 30 // 24 hours
+                },
             })
 
             console.log({ code });
