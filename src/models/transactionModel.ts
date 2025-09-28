@@ -39,6 +39,10 @@ const TransactionsModel = db.define('transactions', {
 		type: JSONB,
 		allowNull: false
 	},
+	device: {
+		type: JSONB,
+		allowNull: true
+	},
 	senderFullName: {
 		type: STRING,
 		allowNull: false

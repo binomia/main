@@ -146,6 +146,7 @@ export class TransactionsController {
                 }
             }
 
+            const device = req.headers["device"]
             const queueData = {
                 receiverUsername: validatedData.receiver,
                 sender: {
@@ -166,12 +167,12 @@ export class TransactionsController {
                     status: "pending",
                     isRecurring: recurrenceData.time !== "oneTime",
                 },
-                device: {
+                device: Object.assign(device ? JSON.parse(device) : {}, {
                     deviceId: deviceid,
                     sessionId: sid,
                     ipAddress: ipaddress,
                     platform,
-                }
+                })
             }
 
             const ledgerData = {
@@ -255,7 +256,7 @@ export class TransactionsController {
         try {
             const { user, userId, sid: sessionId } = await checkForProtectedRequests(context.req);
             const { deviceid, ipaddress, platform } = context.req.headers
-            
+
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
             const recurrenceData = await TransactionJoiSchema.recurrenceTransaction.parseAsync(recurrence)
 
@@ -302,6 +303,7 @@ export class TransactionsController {
                 }
             }
 
+            const device = context.req.headers["device"]
             const queueData = {
                 receiverUsername: validatedData.receiver,
                 sender: {
@@ -322,14 +324,13 @@ export class TransactionsController {
                     status: "pending",
                     isRecurring: recurrenceData.time !== "oneTime",
                 },
-                device: {
+                response: transactionResponse,
+                device: Object.assign(device ? JSON.parse(device) : {}, {
                     deviceId: deviceid,
                     sessionId,
                     ipAddress: ipaddress,
-                    platform,
-                },
-                response: transactionResponse
-
+                    platform
+                })
             }
 
             const encryptedData = await AES.encryptAsync(JSON.stringify(queueData), ZERO_ENCRYPTION_KEY)
