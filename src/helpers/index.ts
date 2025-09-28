@@ -9,7 +9,8 @@ import { z } from 'zod'
 import redis, { connection } from '@/redis';
 import * as zlib from 'zlib';
 import { Queue } from 'bullmq';
-import { AES } from 'cryptografia';
+import { AES, HASH } from 'cryptografia';
+import { de } from '@faker-js/faker';
 
 export const notificationsQueue = new Queue("notifications", { connection });
 
@@ -290,17 +291,30 @@ export const IS_VALID_CARD_LENGTH = (cardNumber: string): boolean => {
 
 export const checkForProtectedRequests = async (req: any) => {
     try {
-        const deviceid = await z.string().length(64).transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
-        const token = await z.string().min(1).transform((val) => val.trim()).parseAsync(req.headers["authorization"]);
-        const jwtToken = token.split(' ')[1];
+        const deviceId = req.headers['deviceid']
+        const authorization = req.headers['authorization']
+        const jwtToken = authorization?.split(" ")[1]
+
+        if (!jwtToken || !deviceId) {
+            throw new GraphQLError("INVALID_SESSION: No authorization token", {
+                extensions: {
+                    code: "INVALID_SESSION",
+                    http: {
+                        status: 500
+                    }
+                }
+            })
+        }
 
         const jwtVerifyAsync = new Promise((resolve, reject) => {
             jwt.verify(jwtToken, ZERO_ENCRYPTION_KEY, (err: any, payload: any) => {
                 if (err) {
                     reject(err);
                 }
-                else
+                else {
+
                     resolve(payload);
+                }
             });
         });
 
@@ -343,13 +357,11 @@ export const checkForProtectedRequests = async (req: any) => {
                 }]
             })
 
-
-
             if (!session)
                 throw new GraphQLError("INVALID_SESSION: No session found")
 
             const sessionJSON = session.toJSON()
-            if (jwtToken !== sessionJSON.jwt || deviceid !== sessionJSON.deviceId)
+            if (jwtToken !== sessionJSON.jwt || deviceId !== sessionJSON.deviceId)
                 throw new Error("INVALID_SESSION: Invalid token data")
 
             else

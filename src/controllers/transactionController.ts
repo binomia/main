@@ -70,19 +70,17 @@ export class TransactionsController {
         }
     }
 
-    static createTransaction = async (_: unknown, { message }: { message: string }, { req, tracer }: { req: any, metrics: PrometheusMetrics, tracer: Tracer }) => {
+    static createTransaction = async (_: unknown, { data, recurrence }: { data: any, recurrence: any }, { req, tracer }: { req: any, metrics: PrometheusMetrics, tracer: Tracer }) => {
         const start = performance.now();
         const span: Span = tracer.startSpan("createTransaction");
         try {
             span.addEvent("Starting transaction creation");
-            span.setAttribute("graphql.mutation.data", JSON.stringify(message));
+            span.setAttribute("graphql.mutation.data", JSON.stringify({ data, recurrence }));
 
-            const { user, sid, userId, signingKey } = await checkForProtectedRequests(req);
+            console.log({ data, recurrence });
+
+            const { user, sid, userId } = await checkForProtectedRequests(req);
             const { account } = user
-
-            const decryptedPrivateKey = await AES.decryptAsync(signingKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await AES.decryptAsync(message, decryptedPrivateKey)
-            const { data, recurrence } = JSON.parse(decryptedMessage)
 
             span.setStatus({ code: SpanStatusCode.OK });
             span.end();
@@ -227,8 +225,6 @@ export class TransactionsController {
                 throw new GraphQLError(error.message);
             })
 
-
-
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
 
@@ -255,16 +251,11 @@ export class TransactionsController {
         }
     }
 
-    static createRequestTransaction = async (_: unknown, { message }: { message: string }, context: any) => {
+    static createRequestTransaction = async (_: unknown, { data, recurrence }: { data: any, recurrence: any }, context: any) => {
         try {
-            const { user, userId, sid: sessionId, signingKey } = await checkForProtectedRequests(context.req);
+            const { user, userId, sid: sessionId } = await checkForProtectedRequests(context.req);
             const { deviceid, ipaddress, platform } = context.req.headers
-
-            const decryptedPrivateKey = await AES.decryptAsync(signingKey, ZERO_ENCRYPTION_KEY)
-            const decryptedMessage = await AES.decryptAsync(message, decryptedPrivateKey)
-
-            const { data, recurrence } = JSON.parse(decryptedMessage)
-
+            
             const validatedData = await TransactionJoiSchema.createTransaction.parseAsync(data)
             const recurrenceData = await TransactionJoiSchema.recurrenceTransaction.parseAsync(recurrence)
 

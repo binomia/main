@@ -1,6 +1,5 @@
 import { GlobalZodSchema } from "@/auth"
 
-const evironmentVariables = GlobalZodSchema.evironmentVariables.parse(process.env)
 export const {
     MAIN_SERVER_PORT,
     REDIS_HOST,
@@ -13,10 +12,13 @@ export const {
     QUEUE_SERVER_URL,
     LOKI_URL,
     LOKI_USERNAME,
-    LOKI_PASSWORD
+    LOKI_PASSWORD,
+    GOOGLE_PROJECT_NUMBER,
+    GOOGLE_MAPS_API_KEY
+} = GlobalZodSchema.evironmentVariables.parse(process.env)
 
-} = evironmentVariables
 
+export const GOOGLE_PLAY_INTENITY_URL = `https://playintegrity.googleapis.com/v1/${GOOGLE_PROJECT_NUMBER}:decodeIntegrityToken`
 
 export const NOTIFICATION_REDIS_SUBSCRIPTION_CHANNEL = {
     NOTIFICATION_TRANSACTION_CREATED: "NOTIFICATION_TRANSACTION_CREATED",

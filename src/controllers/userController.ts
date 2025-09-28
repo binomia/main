@@ -455,7 +455,7 @@ export class UsersController {
         try {
 
             const validatedData = await UserJoiSchema.login.parseAsync({ email, password })
-            const deviceId = await z.string().length(64).transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
+            const deviceId = await z.string().transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
 
 
             const user = await UsersModel.findOne({

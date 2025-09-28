@@ -16,7 +16,7 @@ export class GlobalZodSchema {
         device: z.object({}).passthrough().optional().default({}),
     })
     static registerHeader = z.object({
-        "deviceid": z.string().length(64, 'base64').transform((val) => val.trim()),
+        "deviceid": z.string().length(61, "sha256").transform((val) => val.trim()),
         device: z.string(),
     })
 
@@ -33,5 +33,7 @@ export class GlobalZodSchema {
         LOKI_USERNAME: z.string(),
         LOKI_PASSWORD: z.string(),
         LOKI_URL: z.string(),
+        GOOGLE_PROJECT_NUMBER: z.string().nullish().transform(v => v ?? ""),
+        GOOGLE_MAPS_API_KEY: z.string().nullish().transform(v => v ?? ""),
     })
 }

@@ -11,13 +11,14 @@ import { typeDefs } from './src/gql'
 import { resolvers } from './src/gql'
 import { db } from './src/config';
 import { keyvRedis } from "@/redis";
-import { formatError } from "@/helpers";
+import { checkForProtectedRequests, formatError } from "@/helpers";
 import { MAIN_SERVER_PORT } from "@/constants";
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { collectDefaultMetrics, register } from 'prom-client';
 // import { initTracing } from "@/tracing";
 import { Span, trace } from '@opentelemetry/api'
+import { seedDatabase } from "seed";
 
 // Define the Context Type
 interface Context {
@@ -81,7 +82,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
         })
 
     } else {
-        await db.authenticate().then(() => {
+        await db.authenticate({ logging: false }).then(() => {
             console.log('\nDatabase connection has been established successfully.');
             db.sync()
 
@@ -106,6 +107,11 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
         await server.start();
 
         //  2) Create a custom /metrics endpoint
+        app.get('/seed', async (req, res) => {
+            await seedDatabase();
+            res.end('Database seeded');
+        });
+
         app.get('/metrics', async (req, res) => {
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());
@@ -117,7 +123,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
             }),
             express.json(),
             expressMiddleware(server, {
-                context: async ({ req, res }) => {
+                context: async ({ req, res }) => {                    
                     return { req, res, tracer, metrics };
                 }
             })

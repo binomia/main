@@ -1,8 +1,24 @@
 import { TransactionsController } from '@/controllers'
 
 
+//   "data": {
+//     "receiver": "$bennymaru",
+//     "amount": 10,
+//     "transactionType": "transfer",
+//     "currency": "DOP",
+//     "location": {
+//       "latitude": 18.492916,
+//       "longitude": -69.751045
+//     }
+//   },
+//   "recurrence": {
+//     "title": "oneTime",
+//     "time": "oneTime"
+//   }
+// }
+
 const type = () => {
-    return `
+    return `        
         input TransactionLocationInput {
             latitude: Float
             longitude: Float
@@ -12,7 +28,7 @@ const type = () => {
             fullArea: String            
         }  
 
-        input TransactionInput {
+        input NewTransactionInput {
             receiver: String
             amount: Float
             transactionType: String
@@ -20,7 +36,7 @@ const type = () => {
             location: TransactionLocationInput
         }
             
-        input TransactionRecurrenceInput {
+        input NewTransactionRecurrenceInput {
             title: String
             time: String
         }
@@ -197,9 +213,9 @@ const mutation = () => {
     return `
         deleteRecurrentTransactions(repeatJobKey: String!, queueType: String): OnlyRecurrentTransactionType
         updateRecurrentTransactions(data: UpdateQueuedTransactionInput!): OnlyRecurrentTransactionType
-        createTransaction(message: String!): TransactionType
+        createTransaction(data: NewTransactionInput!, recurrence: NewTransactionRecurrenceInput!): TransactionType
         payRequestTransaction(transactionId: String!, paymentApproved: Boolean!): TransactionType
-        createRequestTransaction(message: String!): TransactionType
+        createRequestTransaction(data: NewTransactionInput!, recurrence: NewTransactionRecurrenceInput!): TransactionType
         cancelRequestedTransaction(transactionId: String!): TransactionType
         createBankingTransaction(cardId: Int!, data: BankingTransactionInput!): BankingTransactionCreatedType
     `

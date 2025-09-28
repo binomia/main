@@ -14,7 +14,7 @@ export const db = new Sequelize({
 // postgres://postgres:postgres@postgres:5432/postgres
 export const dbConnection = async () => {
     try {
-        db.authenticate()
+        db.authenticate({ logging: false })
         db.sync()
         // console.log('\nDatabase connection has been established successfully.');
     } catch (error) {
