@@ -100,13 +100,20 @@ export class TopUpController {
                 const offset = (page - 1) * _pageSize;
                 const limit = _pageSize;
 
+                const lastFetchDate = context.req.headers['last-fetch-date']
+
                 const waitingTopUps = await getWaitingTopUps({ userId, queue: topUpQueue }).catch(() => [])
                 const tupups = await TopUpsModel.findAll({
                     limit,
                     offset,
                     order: [['createdAt', 'DESC']],
                     attributes: fields['topups'],
-                    where: { userId },
+                    where: {
+                        [Op.and]: [
+                            { userId },
+                            { createdAt: { [Op.gt]: lastFetchDate ? new Date(Number(lastFetchDate)) : new Date(0) } }
+                        ]
+                    },
                     include: [
                         {
                             model: UsersModel,

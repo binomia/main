@@ -8,6 +8,10 @@ const SessionModel = db.define('sessions', {
 	},
 	sid: TEXT,
 	deviceId: TEXT,
+	status: {
+		type: STRING,
+		defaultValue: "created"
+	},
 	expoNotificationToken: STRING,
 	jwt: TEXT,
 	expires: DATE,

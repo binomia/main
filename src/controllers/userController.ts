@@ -612,6 +612,29 @@ export class UsersController {
         }
     }
 
+    static logout = async (_: unknown,___: any, { __, req }: { __: any, req: any }) => {
+        try {
+            const { sid } = await checkForProtectedRequests(req);
+            const session = await SessionModel.findOne({
+                where: {
+                    [Op.and]: [
+                        { sid },
+                        { verified: false }
+                    ]
+                }               
+            })
+
+            if (!session)
+                throw new GraphQLError('Session not found or already verified');
+
+            await session.update({ status: "inactive" })
+            return true
+
+        } catch (error: any) {
+            throw new GraphQLError(error.message);
+        }
+    }
+
     static verifySession = async (_: unknown, { sid, code, signature }: { sid: string, code: string, signature: string }) => {
         try {
             const session = await SessionModel.findOne({
@@ -654,7 +677,7 @@ export class UsersController {
             if (!verified)
                 throw new GraphQLError('Failed to verify session');
 
-            await session.update({ verified })
+            await session.update({ verified, status: "active" })
             return session.toJSON().user
 
         } catch (error: any) {

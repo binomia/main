@@ -123,7 +123,7 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
             }),
             express.json(),
             expressMiddleware(server, {
-                context: async ({ req, res }) => {                    
+                context: async ({ req, res }) => {
                     return { req, res, tracer, metrics };
                 }
             })

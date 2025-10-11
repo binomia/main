@@ -164,6 +164,7 @@ const mutation = () => {
         updateUser(data: UpdateUserDataInput!): OnlyUserType
         sendMessage(message: String): String
         login(email: String!, password: String!): LoginType
+        logout: Boolean
         verifySession(sid: String!, code: String!, signature: String!): UserType
         updateUserPassword(email: String!, password: String!, data: TokenAngSignInput!): OnlyUserType
     `
@@ -177,7 +178,7 @@ const subscription = () => {
     `
 }
 
-const { userByEmail, singleUser, sessionUser, verifySession, searchSingleUser, updateUserPassword, updateUser, sugestedUsers, user, createUser, searchUsers, login } = UsersController
+const { userByEmail, singleUser, sessionUser, verifySession, searchSingleUser, updateUserPassword, updateUser, sugestedUsers, user, createUser, searchUsers, login, logout } = UsersController
 const resolvers = {
     query: {
         user,
@@ -194,6 +195,7 @@ const resolvers = {
         updateUser,
         updateUserPassword,
         login,
+        logout,
         verifySession
     },
 

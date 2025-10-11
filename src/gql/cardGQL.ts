@@ -72,7 +72,7 @@ const subscription = () => {
     return ``
 }
 
-const { createCard, deleteCard,updateCard, card, cards } = CardsController
+const { createCard, deleteCard, updateCard, card, cards } = CardsController
 const resolvers = {
     query: {
         card,
