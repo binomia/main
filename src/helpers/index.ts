@@ -1,33 +1,31 @@
-import { AccountModel, CardsModel, LedgerModel, SessionModel, UsersModel } from '@/models';
+import {AccountModel, CardsModel, LedgerModel, SessionModel, UsersModel} from '@/models';
 import KYCModel from '@/models/kycModel';
 import bcrypt from 'bcryptjs';
-import { GraphQLError } from 'graphql';
-import { ZERO_ENCRYPTION_KEY } from '@/constants';
+import {GraphQLError, GraphQLFormattedError} from 'graphql';
+import {ZERO_ENCRYPTION_KEY} from '@/constants';
 import jwt from 'jsonwebtoken';
-import { Op } from 'sequelize';
-import { z } from 'zod'
-import redis, { connection } from '@/redis';
+import {Op} from 'sequelize';
+import {z} from 'zod'
+import redis, {connection} from '@/redis';
 import * as zlib from 'zlib';
-import { Queue } from 'bullmq';
-import { AES, HASH } from 'cryptografia';
-import { de } from '@faker-js/faker';
+import {Queue} from 'bullmq';
+import {AES} from 'cryptografia';
 
-export const notificationsQueue = new Queue("notifications", { connection });
+export const notificationsQueue = new Queue("notifications", {connection});
 
-export const insertLadger = async ({ sender, receiver }: any) => {
+export const insertLadger = async ({sender, receiver}: any) => {
     try {
         await Promise.all([
             LedgerModel.create(sender),
             LedgerModel.create(receiver)
         ])
     } catch (error) {
-        console.log({ insertLadger: error })
+        console.log({insertLadger: error})
     }
 }
 
 
-
-export const getRecurrenceTopUps = async ({ userId, queue }: { userId: string, queue: Queue }) => {
+export const getRecurrenceTopUps = async ({userId, queue}: { userId: string, queue: Queue }) => {
     try {
         const getJobs = await queue.getJobs(["delayed"])
         const jobs = await Promise.all(
@@ -48,11 +46,12 @@ export const getRecurrenceTopUps = async ({ userId, queue }: { userId: string, q
         return jobs.flat()
 
     } catch (error: any) {
-        console.log({ error });
+        console.log({error});
         throw new Error(error);
     }
 }
-export const getWaitingTopUps = async ({ userId, queue }: { userId: string, queue: Queue }) => {
+
+export const getWaitingTopUps = async ({userId, queue}: { userId: string, queue: Queue }) => {
     try {
         const getJobs = await queue.getJobs(["waiting"])
         const jobs = await Promise.all(
@@ -73,11 +72,12 @@ export const getWaitingTopUps = async ({ userId, queue }: { userId: string, queu
         return jobs.flat()
 
     } catch (error: any) {
-        console.log({ error });
+        console.log({error});
         throw new Error(error);
     }
 }
-export const getRecurrenceTransactions = async ({ userId, queue }: { userId: string, queue: Queue }) => {
+
+export const getRecurrenceTransactions = async ({userId, queue}: { userId: string, queue: Queue }) => {
     try {
         const getJobs = await queue.getJobs(["delayed"])
 
@@ -98,11 +98,12 @@ export const getRecurrenceTransactions = async ({ userId, queue }: { userId: str
         return jobs.flat()
 
     } catch (error: any) {
-        console.log({ error });
+        console.log({error});
         throw new Error(error);
     }
 }
-export const getWaitingTransactions = async ({ userId, queue }: { userId: string, queue: Queue }) => {
+
+export const getWaitingTransactions = async ({userId, queue}: { userId: string, queue: Queue }) => {
     try {
         const getJobs = await queue.getJobs(["waiting"])
         const jobs = await Promise.all(
@@ -121,7 +122,7 @@ export const getWaitingTransactions = async ({ userId, queue }: { userId: string
         return jobs.flat()
 
     } catch (error: any) {
-        console.log({ error });
+        console.log({error});
         throw new Error(error);
     }
 }
@@ -188,9 +189,7 @@ const getGqlBody = (fieldNodes: any[], schema: string) => {
 
 export const getQueryResponseFields = (fieldNodes: any[], name: string) => {
     const selections = fieldNodes[0].selectionSet?.selections;
-    const fields = getGqlBody(selections, name)
-
-    return fields
+    return getGqlBody(selections, name)
 }
 
 export const addFutureDate = (day: number = 30): number => {
@@ -201,26 +200,21 @@ export const addFutureDate = (day: number = 30): number => {
 
 export const hashPassword = (password: string): Promise<string> => {
     const saltRounds = 10;
-    const hashedPassword = bcrypt.hash(password, saltRounds);
-    return hashedPassword;
+    return bcrypt.hash(password, saltRounds);
 }
 
 export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
-    const isMatch = bcrypt.compareSync(password, hashedPassword)
-    return isMatch
+    return bcrypt.compareSync(password, hashedPassword)
 }
 
 export const formatCedula = (value: string): string => {
     if (value.length <= 3 && value !== "") {
         return value.replaceAll("-", "")
-    }
-    else if (value.length > 3 && value.length <= 10) {
-        const formattedValue = value.slice(0, 3) + "-" + value.slice(3)
-        return formattedValue
-    }
-    else if (value.length > 10 && value.length <= 11) {
-        const formattedValue = value.slice(0, 3) + "-" + value.slice(3, 10) + "-" + value.slice(10, 11);
-        return formattedValue
+    } else if (value.length > 3 && value.length <= 10) {
+        return value.slice(0, 3) + "-" + value.slice(3)
+
+    } else if (value.length > 10 && value.length <= 11) {
+        return value.slice(0, 3) + "-" + value.slice(3, 10) + "-" + value.slice(10, 11);
     }
     return value
 }
@@ -310,8 +304,7 @@ export const checkForProtectedRequests = async (req: any) => {
             jwt.verify(jwtToken, ZERO_ENCRYPTION_KEY, (err: any, payload: any) => {
                 if (err) {
                     reject(err);
-                }
-                else {
+                } else {
 
                     resolve(payload);
                 }
@@ -333,8 +326,8 @@ export const checkForProtectedRequests = async (req: any) => {
             const session = await SessionModel.findOne({
                 where: {
                     [Op.and]: [
-                        { sid: jwtData.sid },
-                        { verified: true }
+                        {sid: jwtData.sid},
+                        {verified: true}
                     ]
                 },
                 include: [{
@@ -372,7 +365,7 @@ export const checkForProtectedRequests = async (req: any) => {
             return session.toJSON()
 
         }).catch((error: any) => {
-            console.log({ error });
+            console.log({error});
 
             const message = error.message === "jwt expired" ? "INVALID_SESSION: Session expired" : error.message
             throw new GraphQLError(message, {
@@ -407,12 +400,20 @@ export const GENERATE_SIX_DIGIT_TOKEN = (): string => {
     return token.toString();
 }
 
-export const formatError = (formattedError: any, _: any) => {
-    return {
-        message: formattedError.message
+export const safeJsonParse = (text: string) => {
+    try {
+        return JSON.parse(text)
+    } catch (e: any) {
+        console.log(e.toString());
     }
 }
 
+export const formatError = (formattedError: GraphQLFormattedError, _: any) => {
+    return {
+        message: formattedError.path?.toLocaleString() || "GraphQL Error",
+        data: safeJsonParse(formattedError.message)
+    }
+}
 
 export const toSnakeCase = (str: string) => {
     return str.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();

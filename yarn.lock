@@ -4301,10 +4301,10 @@ credit-card-type@^10.0.2:
   resolved "https://registry.npmjs.org/credit-card-type/-/credit-card-type-10.0.2.tgz"
   integrity sha512-vt/iQokU0mtrT7ceRU75FSmWnIh5JFpLsUUUWYRmztYekOGm0ZbCuzwFTbNkq41k92y+0B8ChscFhRN9DhVZEA==
 
-cromio@^0.0.14:
-  version "0.0.14"
-  resolved "https://registry.yarnpkg.com/cromio/-/cromio-0.0.14.tgz#7f47a8a6f0ea5aff3bb856dea4201a671a9589bd"
-  integrity sha512-80lnAFx1VKTjNJPHk3VlP288tr/p1TaHUdg2oWUmRr+QbEk20VzcxPCqgDeT6wvKexvBxkqiI2KBPbyEowS5zg==
+cromio@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/cromio/-/cromio-0.0.15.tgz#937a4806e7157ce2c4be856adc19496bb07af1a3"
+  integrity sha512-vnkxY8clsTVTKQQTdfdbHWQ46Qh/PdT0zkc3T35NdXxj4VqNAexwPqXo2BVvOxFWlESg+i7CFY2ydqD1y/3whw==
   dependencies:
     "@opentelemetry/api" "^1.9.0"
     "@opentelemetry/auto-instrumentations-node" "^0.55.3"

@@ -16,7 +16,7 @@ export class GlobalZodSchema {
         device: z.object({}).passthrough().optional().default({}),
     })
     static registerHeader = z.object({
-        "deviceid": z.string().length(61, "sha256").transform((val) => val.trim()),
+        "deviceid": z.string().transform((val) => val.trim()),
         device: z.string(),
     })
 

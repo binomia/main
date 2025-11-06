@@ -7,16 +7,14 @@ import cors from 'cors';
 import PrometheusMetrics from "@/metrics/PrometheusMetrics";
 import { ApolloServer, ApolloServerPlugin } from '@apollo/server';
 import { KeyvAdapter } from "@apollo/utils.keyvadapter";
-import { typeDefs } from './src/gql'
-import { resolvers } from './src/gql'
-import { db } from './src/config';
+import { resolvers, typeDefs } from '@/gql'
+import { db } from '@/config';
 import { keyvRedis } from "@/redis";
-import { checkForProtectedRequests, formatError } from "@/helpers";
+import { formatError } from "@/helpers";
 import { MAIN_SERVER_PORT } from "@/constants";
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import { collectDefaultMetrics, register } from 'prom-client';
-// import { initTracing } from "@/tracing";
+import { register } from 'prom-client';
 import { Span, trace } from '@opentelemetry/api'
 import { seedDatabase } from "seed";
 
@@ -40,8 +38,7 @@ const errorHandlingPlugin: ApolloServerPlugin = {
         return {
             async willSendResponse({ response, errors }: any) {
                 if (errors && errors.length > 0) {
-                    const errorCode = errors[0]?.extensions?.http?.status || 500;
-                    response.http.status = errorCode; // Set HTTP status correctly
+                    response.http.status = errors[0]?.extensions?.http?.status || 500; // Set HTTP status correctly
                 }
             }
         }
@@ -55,9 +52,6 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
             const span: Span = tracer.startSpan(request.operationName);
 
             return {
-                async didResolveOperation({ request }) {
-                    span.setAttribute("graphql.query", request.operationName || "");
-                },
                 async willSendResponse({ errors, request }) {
                     if (request.operationName)
                         span.addEvent(request.operationName);
@@ -107,12 +101,12 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
         await server.start();
 
         //  2) Create a custom /metrics endpoint
-        app.get('/seed', async (req, res) => {
+        app.get('/seed', async (_req, res) => {
             await seedDatabase();
             res.end('Database seeded');
         });
 
-        app.get('/metrics', async (req, res) => {
+        app.get('/metrics', async (_req, res) => {
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());
         });
