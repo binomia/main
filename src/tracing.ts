@@ -1,12 +1,12 @@
 // src/tracing.ts
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { Resource } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { JaegerExporter } from "@opentelemetry/exporter-jaeger";
-import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
-import { Counter } from '@opentelemetry/api';
+import {NodeSDK} from '@opentelemetry/sdk-node';
+import {getNodeAutoInstrumentations} from '@opentelemetry/auto-instrumentations-node';
+import {Resource} from '@opentelemetry/resources';
+import {ATTR_SERVICE_NAME} from '@opentelemetry/semantic-conventions';
+import {JaegerExporter} from "@opentelemetry/exporter-jaeger";
+import {PrometheusExporter} from "@opentelemetry/exporter-prometheus";
+import {MeterProvider} from '@opentelemetry/sdk-metrics';
+import {Counter} from '@opentelemetry/api';
 
 
 const traceExporter = new JaegerExporter({
@@ -14,7 +14,7 @@ const traceExporter = new JaegerExporter({
 });
 
 const metricReader = new PrometheusExporter({
-    endpoint: 'http://prometheus:9090/metrics'    
+    endpoint: 'http://prometheus:9090/metrics'
 })
 
 // Initialize MeterProvider separately (DO NOT pass metricReader to NodeSDK)
@@ -37,11 +37,8 @@ const httpRequestCounter: Counter = meter.createCounter('http_requests_total', {
 
 // Function to increment the counter
 export function recordHttpRequest(route: string, method: string) {
-    httpRequestCounter.add(1, { route, method });
+    httpRequestCounter.add(1, {route, method});
 }
-
-
-
 
 const sdk = new NodeSDK({
     resource: Resource.default().merge(
@@ -53,11 +50,11 @@ const sdk = new NodeSDK({
     // metricReader,
     instrumentations: [
         getNodeAutoInstrumentations({
-            '@opentelemetry/instrumentation-fs': { enabled: false },
-            '@opentelemetry/instrumentation-graphql': { enabled: true },
-            '@opentelemetry/instrumentation-http': { enabled: true },
-            '@opentelemetry/instrumentation-express': { enabled: true },
-            '@opentelemetry/instrumentation-grpc': { enabled: true }
+            '@opentelemetry/instrumentation-fs': {enabled: false},
+            '@opentelemetry/instrumentation-graphql': {enabled: true},
+            '@opentelemetry/instrumentation-http': {enabled: true},
+            '@opentelemetry/instrumentation-express': {enabled: true},
+            '@opentelemetry/instrumentation-grpc': {enabled: true}
         })
     ]
 });
