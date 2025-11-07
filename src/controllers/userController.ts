@@ -1,21 +1,21 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import KYCModel from '@/models/kycModel';
-import { AccountModel, UsersModel, kycModel, TransactionsModel, CardsModel, SessionModel } from '@/models'
-import { Op } from 'sequelize'
-import { getQueryResponseFields, checkForProtectedRequests, GENERATE_SIX_DIGIT_TOKEN, notificationsQueue } from '@/helpers'
-import { ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY, ZERO_SIGN_PUBLIC_KEY } from '@/constants'
-import { GraphQLError } from 'graphql';
-import { GlobalZodSchema, UserJoiSchema } from '@/auth';
-import { UserModelType, VerificationDataType } from '@/types';
-import shortUUID, { generate } from 'short-uuid';
-import { z } from 'zod'
-import { Counter } from 'prom-client';
+import {AccountModel, CardsModel, kycModel, SessionModel, TransactionsModel, UsersModel} from '@/models'
+import {Op} from 'sequelize'
+import {checkForProtectedRequests, GENERATE_SIX_DIGIT_TOKEN, getQueryResponseFields, notificationsQueue} from '@/helpers'
+import {ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY, ZERO_SIGN_PUBLIC_KEY} from '@/constants'
+import {GraphQLError} from 'graphql';
+import {GlobalZodSchema, UserJoiSchema} from '@/auth';
+import {UserModelType, VerificationDataType} from '@/types';
+import shortUUID, {generate} from 'short-uuid';
+import {z} from 'zod'
+import {Counter} from 'prom-client';
 import PrometheusMetrics from '@/metrics/PrometheusMetrics';
-import { AES, HASH, ECC } from "cryptografia"
+import {AES, ECC, HASH} from "cryptografia"
 
 export class UsersController {
-    static users = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
+    static users = async (_: unknown, {page, pageSize}: { page: number, pageSize: number }, context: any, {fieldNodes}: { fieldNodes: any }) => {
         try {
             await checkForProtectedRequests(context.req);
 
@@ -70,7 +70,7 @@ export class UsersController {
         }
     }
 
-    static user = async (_: unknown, ___: any, { __, req }: { __: any, req: any }, { fieldNodes }: { fieldNodes: any }) => {
+    static user = async (_: unknown, ___: any, {req}: { __: any, req: any }, {fieldNodes}: { fieldNodes: any }) => {
         try {
             await checkForProtectedRequests(req);
             const fields = getQueryResponseFields(fieldNodes, 'user')
@@ -137,7 +137,7 @@ export class UsersController {
         }
     }
 
-    static sessionUser = async (_: unknown, ___: any, { metrics, req }: { metrics: PrometheusMetrics, req: any }) => {
+    static sessionUser = async (_: unknown, ___: any, {metrics, req}: { metrics: PrometheusMetrics, req: any }) => {
         try {
             const session = await checkForProtectedRequests(req);
 
@@ -151,7 +151,7 @@ export class UsersController {
         }
     }
 
-    static userByEmail = async (_: unknown, { email }: { email: string }) => {
+    static userByEmail = async (_: unknown, {email}: { email: string }) => {
         try {
             const user = await UsersModel.findOne({
                 where: {
@@ -167,11 +167,11 @@ export class UsersController {
         }
     }
 
-    static singleUser = async (_: unknown, { username }: { username: string }, { __, req }: { __: any, req: any }, { fieldNodes }: { fieldNodes: any }) => {
+    static singleUser = async (_: unknown, {username}: { username: string }, {req}: { __: any, req: any }, {fieldNodes}: { fieldNodes: any }) => {
         try {
             await checkForProtectedRequests(req);
             const fields = getQueryResponseFields(fieldNodes, 'user')
-            const user = await UsersModel.findOne({
+            return await UsersModel.findOne({
                 attributes: fields['user'],
                 where: {
                     username
@@ -195,20 +195,18 @@ export class UsersController {
                 ]
             })
 
-            return user
-
         } catch (error: any) {
             throw new GraphQLError(error.message);
         }
     }
 
-    static updateUserPassword = async (_: unknown, { email, password, data }: { email: string, password: string, data: VerificationDataType }) => {
+    static updateUserPassword = async (_: unknown, {email, password}: { email: string, password: string, data: VerificationDataType }) => {
         const counter = new Counter({
             name: `binomia_apollo_update_user_password_resolver_calls`,
             help: `Number of times the session_user resolver is called`,
         })
         try {
-            const validatedData = await UserJoiSchema.updateUserPassword.parseAsync({ email, password })
+            const validatedData = await UserJoiSchema.updateUserPassword.parseAsync({email, password})
             const user = await UsersModel.findOne({
                 where: {
                     email
@@ -242,7 +240,7 @@ export class UsersController {
         }
     }
 
-    static searchSingleUser = async (_: any, { search, limit }: { search: UserModelType, limit: number }, { __, req }: { __: any, req: any }, { fieldNodes }: { fieldNodes: any }) => {
+    static searchSingleUser = async (_: any, {search, limit}: { search: UserModelType, limit: number }, {req}: { __: any, req: any }, {fieldNodes}: { fieldNodes: any }) => {
         try {
             await checkForProtectedRequests(req);
             const fields = getQueryResponseFields(fieldNodes, "users")
@@ -250,7 +248,7 @@ export class UsersController {
             const searchFilter = []
             for (const [key, value] of Object.entries(search)) {
                 if (value) {
-                    searchFilter.push({ [key]: { [Op.like]: `%${value}%` } }) // change like to ilike for postgres
+                    searchFilter.push({[key]: {[Op.like]: `%${value}%`}}) // change like to ilike for postgres
                 }
             }
 
@@ -259,8 +257,8 @@ export class UsersController {
                 attributes: fields['users'],
                 where: {
                     [Op.and]: [
-                        { [Op.or]: searchFilter },
-                        { id: { [Op.ne]: req.session.userId } }
+                        {[Op.or]: searchFilter},
+                        {id: {[Op.ne]: req.session.userId}}
                     ]
                 },
                 include: [
@@ -282,7 +280,7 @@ export class UsersController {
         }
     }
 
-    static searchUsers = async (_: any, { allowRequestMe, search, limit }: { allowRequestMe: boolean, search: UserModelType, limit: number }, { __, req }: { __: any, req: any }, { fieldNodes }: { fieldNodes: any }) => {
+    static searchUsers = async (_: any, {allowRequestMe, search, limit}: { allowRequestMe: boolean, search: UserModelType, limit: number }, {req}: { __: any, req: any }, {fieldNodes}: { fieldNodes: any }) => {
         try {
             await checkForProtectedRequests(req);
             const fields = getQueryResponseFields(fieldNodes, "users")
@@ -290,7 +288,7 @@ export class UsersController {
             const searchFilter = []
             for (const [key, value] of Object.entries(search)) {
                 if (value) {
-                    searchFilter.push({ [key]: { [Op.like]: `%${value}%` } }) // change like to ilike for postgres
+                    searchFilter.push({[key]: {[Op.like]: `%${value}%`}}) // change like to ilike for postgres
                 }
             }
 
@@ -299,9 +297,9 @@ export class UsersController {
                 attributes: fields['users'],
                 where: {
                     [Op.and]: [
-                        { [Op.or]: searchFilter },
-                        { id: { [Op.ne]: req.session.userId } },
-                        { username: { [Op.ne]: "$binomia" } }
+                        {[Op.or]: searchFilter},
+                        {id: {[Op.ne]: req.session.userId}},
+                        {username: {[Op.ne]: "$binomia"}}
                     ]
                 },
                 include: [
@@ -313,8 +311,8 @@ export class UsersController {
                 ]
             })
 
-            const filteredUsers = users.filter(user => {
-                const { allowReceive, allowRequestMe: requestMe } = user.toJSON().account
+            return users.filter(user => {
+                const {allowReceive, allowRequestMe: requestMe} = user.toJSON().account
 
                 if (allowRequestMe)
                     return requestMe === true
@@ -322,20 +320,17 @@ export class UsersController {
                 return allowReceive === true
             })
 
-
-            return filteredUsers
-
         } catch (error: any) {
             throw new GraphQLError(error.message);
 
         }
     }
 
-    static createUser = async (_: unknown, { data }: { data: any }, { __, req }: { __: any, req: any }) => {
+    static createUser = async (_: unknown, {data}: { data: any }, {req}: { __: any, req: any }) => {
         try {
             const validatedData = await UserJoiSchema.createUser.parseAsync(data)
             const registerHeader = await GlobalZodSchema.registerHeader.parseAsync(req.headers)
-            const regexPattern = new RegExp('^\\d{3}-\\d{7}-\\d{1}');
+            const regexPattern = new RegExp('^\\d{3}-\\d{7}-\\d');
 
             if (!regexPattern.test(validatedData.dniNumber))
                 throw new GraphQLError('Invalid `dni` format');
@@ -344,8 +339,8 @@ export class UsersController {
             const userExists = await UsersModel.findOne({
                 where: {
                     [Op.or]: [
-                        { email: validatedData.email },
-                        { username: validatedData.username }
+                        {email: validatedData.email},
+                        {username: validatedData.username}
                     ]
                 },
                 attributes: ["email", "username", "dniNumber"]
@@ -366,7 +361,6 @@ export class UsersController {
 
             if (kycExists)
                 throw new GraphQLError('The dni: ' + validatedData.dniNumber + ' already belong to a existing user');
-
 
 
             const salt = await bcrypt.genSalt(10);
@@ -430,7 +424,7 @@ export class UsersController {
         }
     }
 
-    static updateUser = async (_: unknown, { data }: { data: any }, { req }: { req: any }) => {
+    static updateUser = async (_: unknown, {data}: { data: any }, {req}: { req: any }) => {
         try {
             await checkForProtectedRequests(req);
             const validatedData = await UserJoiSchema.updateUser.parseAsync(data)
@@ -443,23 +437,22 @@ export class UsersController {
             if (!user)
                 throw new GraphQLError('User not found');
 
-            const userUpdated = await user.update(validatedData)
-            return userUpdated
+            return await user.update(validatedData)
 
         } catch (error: any) {
             throw new GraphQLError(error.message);
         }
     }
 
-    static login = async (_: unknown, { email, password }: { email: string, password: string }, { res, req }: { res: any, req: any }) => {
+    static login = async (_: unknown, {email, password}: { email: string, password: string }, {req}: { res: any, req: any }) => {
         try {
 
-            const validatedData = await UserJoiSchema.login.parseAsync({ email, password })
+            const validatedData = await UserJoiSchema.login.parseAsync({email, password})
             const deviceId = await z.string().transform((val) => val.trim()).parseAsync(req.headers["deviceid"]);
 
 
             const user = await UsersModel.findOne({
-                where: { email },
+                where: {email},
                 attributes: ["id", "password", "username", "email", "status", "phone", "dniNumber"],
                 include: [
                     {
@@ -487,8 +480,8 @@ export class UsersController {
             const session = await SessionModel.findOne({
                 where: {
                     [Op.and]: [
-                        { userId: user.toJSON().id },
-                        { deviceId },
+                        {userId: user.toJSON().id},
+                        {deviceId},
                         {
                             expires: {
                                 [Op.gt]: Date.now()
@@ -514,7 +507,7 @@ export class UsersController {
                         code
                     }), ZERO_ENCRYPTION_KEY);
 
-                    notificationsQueue.add(jobId, transactionEncryptedData, {
+                    await notificationsQueue.add(jobId, transactionEncryptedData, {
                         jobId,
                         attempts: 3,
                         backoff: {
@@ -530,7 +523,7 @@ export class UsersController {
                     })
 
 
-                    console.log({ code });
+                    console.log({code});
                     return {
                         user: user.toJSON(),
                         sid: session.toJSON().sid,
@@ -553,11 +546,11 @@ export class UsersController {
 
             const sid = `${generate()}${generate()}${generate()}`
             const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
-            const token = jwt.sign({ sid, signingKey: signingKey, username: user.toJSON().username }, ZERO_ENCRYPTION_KEY);
+            const token = jwt.sign({sid, signingKey: signingKey, username: user.toJSON().username}, ZERO_ENCRYPTION_KEY);
 
             const sessionCreated = await SessionModel.create({
                 sid,
-                verified: session ? true : false,
+                verified: !!session,
                 deviceId,
                 signingKey,
                 expoNotificationToken: req.headers.exponotificationtoken || null,
@@ -581,7 +574,7 @@ export class UsersController {
                 code
             }), ZERO_ENCRYPTION_KEY);
 
-            notificationsQueue.add(jobId, transactionEncryptedData, {
+            await notificationsQueue.add(jobId, transactionEncryptedData, {
                 jobId,
                 attempts: 3,
                 backoff: {
@@ -596,7 +589,7 @@ export class UsersController {
                 },
             })
 
-            console.log({ code });
+            console.log({code});
             return {
                 sid: sessionCreated.toJSON().sid,
                 signingKey: sessionCreated.toJSON().signingKey,
@@ -612,22 +605,22 @@ export class UsersController {
         }
     }
 
-    static logout = async (_: unknown,___: any, { __, req }: { __: any, req: any }) => {
+    static logout = async (_: unknown, ___: any, {req}: { __: any, req: any }) => {
         try {
-            const { sid } = await checkForProtectedRequests(req);
+            const {sid} = await checkForProtectedRequests(req);
             const session = await SessionModel.findOne({
                 where: {
                     [Op.and]: [
-                        { sid },
-                        { verified: false }
+                        {sid},
+                        {verified: false}
                     ]
-                }               
+                }
             })
 
             if (!session)
                 throw new GraphQLError('Session not found or already verified');
 
-            await session.update({ status: "inactive" })
+            await session.update({status: "inactive"})
             return true
 
         } catch (error: any) {
@@ -635,13 +628,13 @@ export class UsersController {
         }
     }
 
-    static verifySession = async (_: unknown, { sid, code, signature }: { sid: string, code: string, signature: string }) => {
+    static verifySession = async (_: unknown, {sid, code, signature}: { sid: string, code: string, signature: string }) => {
         try {
             const session = await SessionModel.findOne({
                 where: {
                     [Op.and]: [
-                        { sid },
-                        { verified: false }
+                        {sid},
+                        {verified: false}
                     ]
                 },
                 include: [{
@@ -677,7 +670,7 @@ export class UsersController {
             if (!verified)
                 throw new GraphQLError('Failed to verify session');
 
-            await session.update({ verified, status: "active" })
+            await session.update({verified, status: "active"})
             return session.toJSON().user
 
         } catch (error: any) {
@@ -685,7 +678,7 @@ export class UsersController {
         }
     }
 
-    static sugestedUsers = async (_: unknown, { allowRequestMe }: { allowRequestMe: boolean }, { req }: { req: any }) => {
+    static sugestedUsers = async (_: unknown, {allowRequestMe}: { allowRequestMe: boolean }, {req}: { req: any }) => {
         try {
             await checkForProtectedRequests(req);
 
@@ -693,8 +686,8 @@ export class UsersController {
                 limit: 20,
                 where: {
                     [Op.or]: [
-                        { fromAccount: req.session.user.account.id },
-                        { toAccount: req.session.user.account.id }
+                        {fromAccount: req.session.user.account.id},
+                        {toAccount: req.session.user.account.id}
                     ]
                 },
                 include: [
@@ -755,16 +748,14 @@ export class UsersController {
                 return acc;
             }, []);
 
-            const filteredUsers = users.filter(user => {
-                const { allowReceive, allowRequestMe: requestMe } = user.account
+            return users.filter(user => {
+                const {allowReceive, allowRequestMe: requestMe} = user.account
 
                 if (allowRequestMe)
                     return requestMe === true
 
                 return allowReceive === true
             })
-
-            return filteredUsers
 
         } catch (error: any) {
             throw new GraphQLError(error.message);

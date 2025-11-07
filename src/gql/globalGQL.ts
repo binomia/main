@@ -1,4 +1,4 @@
-import { CardsController, GlobalController } from '@/controllers'
+import { GlobalController } from '@/controllers'
 
 
 const type = () => {

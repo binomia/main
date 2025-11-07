@@ -1,11 +1,11 @@
-import { REDIS_HOST, REDIS_PORT } from "@/constants";
+import {DOCKER_MODE, REDIS_HOST, REDIS_PORT} from "@/constants";
 import KeyvRedis from "@keyv/redis";
 import Redis from "ioredis";
 import Keyv from "keyv";
 
 
 export const connection = {
-    host: "redis",
+    host: DOCKER_MODE ? "redis" : "localhost",
     port: 6379
 }
 

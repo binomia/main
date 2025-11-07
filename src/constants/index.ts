@@ -17,6 +17,7 @@ export const {
     GOOGLE_MAPS_API_KEY
 } = GlobalZodSchema.evironmentVariables.parse(process.env)
 
+export const DOCKER_MODE: boolean = process.env.DOCKER_MODE === "true";
 
 export const GOOGLE_PLAY_INTENITY_URL = `https://playintegrity.googleapis.com/v1/${GOOGLE_PROJECT_NUMBER}:decodeIntegrityToken`
 

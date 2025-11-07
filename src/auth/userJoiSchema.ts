@@ -31,7 +31,7 @@ export class UserJoiSchema {
         faceVideoUrl: z.string().url(),
         address: z.string(),
 
-        dniNumber: z.string().regex(/^[0-9]{3}-[0-9]{7}-[0-9]{1}$/),
+        dniNumber: z.string().regex(/^[0-9]{3}-[0-9]{7}-[0-9]$/),
         dob: z.string(),
         dniExpiration: z.string(),
         occupation: z.string().optional().nullable().default(null),

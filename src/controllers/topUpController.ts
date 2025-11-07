@@ -1,13 +1,13 @@
-import { checkForProtectedRequests, getQueryResponseFields, getWaitingTopUps } from '@/helpers'
-import { GraphQLError } from 'graphql';
-import { TopUpsModel, UsersModel, TopUpCompanyModel, TopUpPhonesModel } from '@/models';
-import { Op } from 'sequelize';
-import { TopUpSchema } from '@/auth';
+import {checkForProtectedRequests, getQueryResponseFields, getWaitingTopUps} from '@/helpers'
+import {GraphQLError} from 'graphql';
+import {TopUpCompanyModel, TopUpPhonesModel, TopUpsModel, UsersModel} from '@/models';
+import {Op} from 'sequelize';
+import {TopUpSchema} from '@/auth';
 import shortUUID from 'short-uuid';
-import redis, { connection } from '@/redis';
-import { AES } from 'cryptografia';
-import { ZERO_ENCRYPTION_KEY } from '@/constants';
-import { Queue } from 'bullmq';
+import redis, {connection} from '@/redis';
+import {AES} from 'cryptografia';
+import {ZERO_ENCRYPTION_KEY} from '@/constants';
+import {Queue} from 'bullmq';
 
 const topUpQueue = new Queue('topups', { connection });
 
@@ -299,13 +299,11 @@ export class TopUpController {
                 throw new GraphQLError('No transactions found');
 
 
-            const filteredTopups = phones.map((phone) => phone.toJSON()?.topups?.map((topup: any) => ({
+            return phones.map((phone) => phone.toJSON()?.topups?.map((topup: any) => ({
                 type: "topups",
                 timestamp: topup?.createdAt,
                 data: topup
             }))).flat()
-
-            return filteredTopups
 
         } catch (error: any) {
             throw new GraphQLError(error);

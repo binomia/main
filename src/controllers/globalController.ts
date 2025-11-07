@@ -1,9 +1,8 @@
-import { checkForProtectedRequests } from '@/helpers'
-import { GraphQLError } from 'graphql';
-import { ZERO_SIGN_PRIVATE_KEY, GOOGLE_PROJECT_NUMBER, ZERO_ENCRYPTION_KEY, GOOGLE_MAPS_API_KEY, GOOGLE_PLAY_INTENITY_URL } from '@/constants';
-import { seedDatabase } from '@/../seed';
-import { HASH, RSA } from 'cryptografia';
-
+import {checkForProtectedRequests} from '@/helpers'
+import {GraphQLError} from 'graphql';
+import {GOOGLE_MAPS_API_KEY, GOOGLE_PLAY_INTENITY_URL, ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY} from '@/constants';
+import {seedDatabase} from '@/../seed';
+import {HASH, RSA} from 'cryptografia';
 
 
 export class GlobalController {
@@ -16,8 +15,7 @@ export class GlobalController {
                 ZERO_SIGN_PRIVATE_KEY
             }))
 
-            const signature = await RSA.sign(hashData, ZERO_SIGN_PRIVATE_KEY)
-            return signature
+            return await RSA.sign(hashData, ZERO_SIGN_PRIVATE_KEY)
 
         } catch (error: any) {
             throw new GraphQLError(error.message);
@@ -49,7 +47,7 @@ export class GlobalController {
         }
     }
 
-    static test = async (_: unknown, { hash }: { hash: string }, { req }: { req: any }) => {
+    static test = async (_: unknown) => {
         try {
             await seedDatabase()
             // const session = await checkForProtectedRequests(req);

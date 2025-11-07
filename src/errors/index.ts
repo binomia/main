@@ -13,25 +13,6 @@ export const graphQLError = (callBack: Function) => {
 }
 
 
-export class CustomError extends Error {
-    private extensions: any
-    constructor(message: string, code: number) {
-        super(message);
-
-        this.stack = new Error().stack
-        this.message = message
-        // this.extensions = {
-        //     code,
-        //     http: {
-        //         status: errorCode[code]
-        //     },
-        //     stacktrace: null
-        // }
-        // this.extensions.code = 'INTERNAL_SERVER_ERROR_Hello_Hello'
-    }
-}
-
-
 export const errorCode: any = {
     [ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED]: 400,
     [ApolloServerErrorCode.INTERNAL_SERVER_ERROR]: 500,

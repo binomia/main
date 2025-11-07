@@ -1,5 +1,5 @@
-import { Queue } from "bullmq";
-import { connection } from "@/redis";
+import {Queue} from "bullmq";
+import {connection} from "@/redis";
 
 
 export default class TransactionsQueue {
@@ -10,7 +10,6 @@ export default class TransactionsQueue {
 
 
     addJob = async (jobName: string, data: string, pattern: string) => {
-        const job = await this.queue.upsertJobScheduler(jobName, { tz: "EST", pattern }, { data });
-        return job
+        return await this.queue.upsertJobScheduler(jobName, {tz: "EST", pattern}, {data})
     }
 }

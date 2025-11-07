@@ -1,6 +1,5 @@
 import { BOOLEAN, STRING } from "sequelize";
 import { db } from "@/config";
-import { allow } from "joi";
 
 const UsersModel = db.define('users', {
     fullName: {

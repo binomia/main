@@ -1,17 +1,17 @@
 import shortUUID from 'short-uuid';
 import PrometheusMetrics from '@/metrics/PrometheusMetrics';
-import { AccountModel, BankingTransactionsModel, TransactionsModel, UsersModel, CardsModel, LedgerModel } from '@/models'
-import { checkForProtectedRequests, insertLadger, getQueryResponseFields, getRecurrenceTopUps, getRecurrenceTransactions, getWaitingTransactions, } from '@/helpers'
-import { GraphQLError } from 'graphql';
-import { TransactionJoiSchema } from '@/auth/transactionJoiSchema';
-import { CRON_JOB_BIWEEKLY_PATTERN, CRON_JOB_MONTHLY_PATTERN, CRON_JOB_WEEKLY_PATTERN, ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY } from '@/constants';
-import { Op } from 'sequelize';
-import { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
-import { AES, ECC, HASH } from 'cryptografia';
-import { connection } from '@/redis';
-import { Queue } from 'bullmq';
-import { Loki } from '@/loki';
-import { performance } from 'perf_hooks';
+import {AccountModel, BankingTransactionsModel, CardsModel, TransactionsModel, UsersModel} from '@/models'
+import {checkForProtectedRequests, getQueryResponseFields, getRecurrenceTopUps, getRecurrenceTransactions, getWaitingTransactions, insertLadger,} from '@/helpers'
+import {GraphQLError} from 'graphql';
+import {TransactionJoiSchema} from '@/auth/transactionJoiSchema';
+import {CRON_JOB_BIWEEKLY_PATTERN, CRON_JOB_MONTHLY_PATTERN, CRON_JOB_WEEKLY_PATTERN, ZERO_ENCRYPTION_KEY, ZERO_SIGN_PRIVATE_KEY} from '@/constants';
+import {Op} from 'sequelize';
+import {Span, SpanStatusCode, Tracer} from '@opentelemetry/api';
+import {AES, ECC, HASH} from 'cryptografia';
+import {connection} from '@/redis';
+import {Queue} from 'bullmq';
+import {Loki} from '@/loki';
+import {performance} from 'perf_hooks';
 
 const transactionQueue = new Queue("transactions", { connection });
 const topUpQueue = new Queue("topups", { connection });
@@ -22,11 +22,11 @@ export class TransactionsController {
             const { user } = await checkForProtectedRequests(context.req);
             const fields = getQueryResponseFields(fieldNodes, 'transaction')
 
-            const transaction = await TransactionsModel.findOne({
+            return await TransactionsModel.findOne({
                 attributes: fields['transaction'],
                 where: {
                     [Op.and]: [
-                        { transactionId },
+                        {transactionId},
                         {
                             [Op.or]: [
                                 {
@@ -62,8 +62,6 @@ export class TransactionsController {
                     }
                 ]
             })
-
-            return transaction
 
         } catch (error: any) {
             throw new GraphQLError(error.message);
@@ -229,7 +227,7 @@ export class TransactionsController {
             span.setAttribute("queueServer.response", JSON.stringify(jobId));
             span.setStatus({ code: SpanStatusCode.OK });
 
-            Loki.push("Transaction created", {
+            await Loki.push("Transaction created", {
                 transactionId: transactionId,
                 from: user.username,
                 to: validatedData.receiver,
@@ -678,7 +676,7 @@ export class TransactionsController {
         }
     }
 
-    static accountRecurrentTransactions = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any, { fieldNodes }: { fieldNodes: any }) => {
+    static accountRecurrentTransactions = async (_: unknown, { page, pageSize }: { page: number, pageSize: number }, context: any) => {
         try {
             const session = await checkForProtectedRequests(context.req);
             const transactions = await getRecurrenceTransactions({ userId: session.userId, queue: transactionQueue })
@@ -688,28 +686,24 @@ export class TransactionsController {
             const limitedTopUps = topups.slice((page - 1) * pageSize, page * pageSize)
             const allTransactions = [...limitedTransactions, ...limitedTopUps]
 
-            const sortedTransactions = allTransactions.sort((a: any, b: any) => {
+            return allTransactions.sort((a: any, b: any) => {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             })
-
-            return sortedTransactions
 
         } catch (error: any) {
             throw new GraphQLError(error);
         }
     }
 
-    static deleteRecurrentTransactions = async (_: unknown, { repeatJobKey, queueType }: { repeatJobKey: string, queueType: string }, context: any, { fieldNodes }: { fieldNodes: any }) => {
+    static deleteRecurrentTransactions = async (_: unknown, { repeatJobKey, queueType }: { repeatJobKey: string, queueType: string }, context: any) => {
         try {
             await checkForProtectedRequests(context.req);
 
             if (queueType === "topUp") {
-                const job = await topUpQueue.removeJobScheduler(repeatJobKey)
-                return job
+                return await topUpQueue.removeJobScheduler(repeatJobKey)
             }
 
-            const job = await transactionQueue.removeJobScheduler(repeatJobKey)
-            return job
+            return await transactionQueue.removeJobScheduler(repeatJobKey)
 
         } catch (error: any) {
             throw new GraphQLError(error);
@@ -734,7 +728,7 @@ export class TransactionsController {
                 })
                 const updatedEncryptedData = await AES.encryptAsync(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
                 const pattern = jobName === "biweekly" ? CRON_JOB_BIWEEKLY_PATTERN : jobName === "monthly" ? CRON_JOB_MONTHLY_PATTERN[jobTime as keyof typeof CRON_JOB_MONTHLY_PATTERN] : CRON_JOB_WEEKLY_PATTERN[jobTime as keyof typeof CRON_JOB_WEEKLY_PATTERN]
-                const job = await topUpQueue.upsertJobScheduler(repeatJobKey, { pattern }, {
+                return await topUpQueue.upsertJobScheduler(repeatJobKey, {pattern}, {
                     name: jobName,
                     data: updatedEncryptedData,
                     opts: {
@@ -742,12 +736,10 @@ export class TransactionsController {
                             type: 'exponential',
                             delay: 1000,
                         },
-                        removeOnComplete: { age: 20 },
-                        removeOnFail: { age: 60 * 30 }
+                        removeOnComplete: {age: 20},
+                        removeOnFail: {age: 60 * 30}
                     }
                 })
-
-                return job
             }
             else {
                 const oldJob: any = await transactionQueue.getJobScheduler(repeatJobKey);
@@ -765,7 +757,7 @@ export class TransactionsController {
                 const updatedEncryptedData = await AES.encryptAsync(JSON.stringify(updatedData), ZERO_ENCRYPTION_KEY)
 
                 const pattern = jobName === "biweekly" ? CRON_JOB_BIWEEKLY_PATTERN : jobName === "monthly" ? CRON_JOB_MONTHLY_PATTERN[jobTime as keyof typeof CRON_JOB_MONTHLY_PATTERN] : CRON_JOB_WEEKLY_PATTERN[jobTime as keyof typeof CRON_JOB_WEEKLY_PATTERN]
-                const job = await transactionQueue.upsertJobScheduler(repeatJobKey, { pattern }, {
+                return await transactionQueue.upsertJobScheduler(repeatJobKey, {pattern}, {
                     name: jobName,
                     data: updatedEncryptedData,
                     opts: {
@@ -773,14 +765,11 @@ export class TransactionsController {
                             type: 'exponential',
                             delay: 1000,
                         },
-                        removeOnComplete: { age: 20 },
-                        removeOnFail: { age: 60 * 30 }
+                        removeOnComplete: {age: 20},
+                        removeOnFail: {age: 60 * 30}
                     }
                 })
-
-                return job
             }
-
 
         } catch (error: any) {
             throw new GraphQLError(error);

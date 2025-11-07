@@ -1,7 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
-import { createAdapter } from "@socket.io/redis-adapter";
-import { accountSockets } from "./global";
+
 
 
 export const initSocket = async (httpServer: HttpServer) => {
@@ -20,7 +19,6 @@ export const initSocket = async (httpServer: HttpServer) => {
             clientsMap.set(clientId, socket.id);
 
         console.log("a user connected:", socket.id);
-        accountSockets(io, socket, clientsMap);
 
         socket.on("disconnect", () => {
             console.log("user disconnected");

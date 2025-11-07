@@ -44,7 +44,6 @@ const createUsers = async () => {
     // await createBinomiaUser()
 }
 
-
 const createTransactions = async () => {
     for (let i = 0; i < 1; i++) {
         const amount = faker.number.int({ min: 1, max: 1000 })
@@ -219,10 +218,6 @@ const createBinomiaUser = async () => {
         console.log(error);
     }
 }
-
-
-// 9Gud3MqryACQ3mD4pKyStB9Gud3MqryACQ3mD4pKyStB
-
 
 export const seedDatabase = async () => {
     // await createUsers()
