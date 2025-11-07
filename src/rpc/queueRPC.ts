@@ -1,7 +1,7 @@
 import axios from "axios";
-import { JSONRPCClient, JSONRPCParams } from "json-rpc-2.0";
-import { QUEUE_SERVER_URL, ZERO_ENCRYPTION_KEY } from "@/constants";
-import { Client, LOAD_BALANCER } from "cromio"
+import {JSONRPCClient, JSONRPCParams} from "json-rpc-2.0";
+import {QUEUE_SERVER_URL, ZERO_ENCRYPTION_KEY} from "@/constants";
+import {Client, LOAD_BALANCER} from "cromio"
 import fs from 'fs';
 import path from 'path';
 
@@ -22,8 +22,7 @@ const queueClient = new JSONRPCClient(async (jsonRPCRequest) => {
 
 export const queueServer = async (method: string, params: JSONRPCParams) => {
     try {
-        const response = await queueClient.request(method, params);
-        return response
+        return await queueClient.request(method, params)
 
     } catch (error: any) {
         throw new Error(error);
