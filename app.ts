@@ -16,7 +16,6 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { register } from 'prom-client';
 import { Span, trace } from '@opentelemetry/api'
-import { seedDatabase } from "seed";
 
 // Define the Context Type
 interface Context {
@@ -99,12 +98,6 @@ const tracingPlugin: ApolloServerPlugin<Context> = {
         });
 
         await server.start();
-
-        //  2) Create a custom /metrics endpoint
-        app.get('/seed', async (_req, res) => {
-            await seedDatabase();
-            res.end('Database seeded');
-        });
 
         app.get('/metrics', async (_req, res) => {
             res.set('Content-Type', register.contentType);

@@ -6,7 +6,7 @@ import {HASH, RSA} from 'cryptografia';
 
 
 export class GlobalController {
-    static signData = async (_: unknown, { hash }: { hash: string }, context: any) => {
+    static signData = async (_: unknown, {hash}: { hash: string }, context: any) => {
         try {
             await checkForProtectedRequests(context.req);
             const hashData = await HASH.sha256Async(JSON.stringify({
@@ -23,9 +23,9 @@ export class GlobalController {
     }
 
 
-    static verifyIntegrity = async (_: unknown, { token }: { token: string }, { req }: { req: any }) => {
+    static verifyIntegrity = async (_: unknown, {token}: { token: string }, {req}: { req: any }) => {
         try {
-            console.log({ token });
+            console.log({token});
             await checkForProtectedRequests(req);
 
 
@@ -35,23 +35,21 @@ export class GlobalController {
                     Authorization: `Bearer ${GOOGLE_MAPS_API_KEY}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ integrity_token: token }),
+                body: JSON.stringify({integrity_token: token}),
             });
 
             const data = await response.json();
 
-            return { valid: true, nonce: data }
+            return {valid: true, nonce: data}
 
         } catch (error: any) {
             throw new GraphQLError(error.message);
         }
     }
 
-    static test = async (_: unknown) => {
+    static test = async (_: unknown, __: any, {req}: { req: any }) => {
         try {
-            await seedDatabase()
-            // const session = await checkForProtectedRequests(req);
-
+            await seedDatabase(req)
             return null;
 
         } catch (error: any) {

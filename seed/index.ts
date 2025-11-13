@@ -1,71 +1,98 @@
-import { GlobalZodSchema, UserJoiSchema } from '@/auth';
-import { AccountModel, kycModel, SessionModel, TopUpCompanyModel, TransactionsModel, UsersModel } from '@/models';
-import { UsersController } from '@/controllers';
-import { faker } from '@faker-js/faker';
-import { Op } from 'sequelize';
-import short, { generate } from 'short-uuid';
-import bcrypt from 'bcrypt';
-import { ZERO_ENCRYPTION_KEY } from '@/constants';
-import jwt from 'jsonwebtoken';
+import {TopUpCompanyModel} from '@/models';
+import {UsersController} from '@/controllers';
 
-const createUsers = async () => {
-    const users = [
-        {
-            "email": "brayhandeaza@gmail.com"
-        },
-        {
-            "email": "lpmrloki@gmail.com"
-        }
-    ]
-    for (let i = 0; i < 2; i++) {
-        await UsersModel.create({
-            fullName: faker.person.fullName(),
-            username: faker.internet.userName(),
-            "dniNumber": `000-000000${i}-${i}`,
-            "phone": `829180907${i}`,
-            "userAgreementSigned": true,
-            email: users[i].email,
-            "password": "123456",
-            profileImageUrl: faker.image.avatar(),
-            sex: faker.person.sex(),
-            address: faker.location.streetAddress(),
-            dob: faker.date.birthdate(),
-            dniExpiration: faker.date.future(),
-            "gender": null,
-            "bloodType": null,
-            "occupation": null,
-            "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-        })
 
-        UsersController.createUser
-    }
-    // await createBinomiaUser()
-}
-
-const createTransactions = async () => {
-    for (let i = 0; i < 1; i++) {
-        const amount = faker.number.int({ min: 1, max: 1000 })
-        await TransactionsModel.create({
-            amount,
-            deliveredAmount: amount,
-            balanceAfterTransaction: amount,
-            balanceBeforeTransaction: amount,
-            voidedAmount: 0,
-            refundedAmount: 0,
-            transactionType: 'debit',
-            currency: 'USD',
-            description: faker.lorem.sentence(),
-            status: 'success',
-            location: {
-                latitude: faker.location.latitude(),
-                longitude: faker.location.longitude()
+const createUsers = async (req: any) => {
+    try {
+        const users = [
+            {
+                "fullName": "Binomia",
+                "username": "$binomia",
+                "phone": "8098027291",
+                "userAgreementSigned": true,
+                "email": "brayhandeaza@gmail.com",
+                "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "dniNumber": "000-0000000-0",
+                "gender": null,
+                "bloodType": null,
+                "occupation": null,
+                "profileImageUrl": null,
+                "address": "Calle 2 #13, Las Palmeras, Guaricano, Santo Domingo Norte ",
+                "dob": "2023-01-10T00:00:00.000Z",
+                "dniExpiration": "2023-01-10T00:00:00.000Z",
+                "password": "123456",
+                "maritalStatus": null
             },
-            signature: faker.database.mongodbObjectId(),
-            senderId: 1,
-            receiverId: 2
-        })
+            {
+                "fullName": "Brayhan De Aza",
+                "username": "brayhandeaza",
+                "phone": "8098027291",
+                "userAgreementSigned": true,
+                "email": "lpmrloki@gmail.com",
+                "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "dniNumber": "000-0000000-1",
+                "gender": null,
+                "bloodType": null,
+                "occupation": null,
+                "profileImageUrl": null,
+                "address": "Calle 2 #13, Las Palmeras, Guaricano, Santo Domingo Norte ",
+                "dob": "2023-01-10T00:00:00.000Z",
+                "dniExpiration": "2023-01-10T00:00:00.000Z",
+                "password": "123456",
+                "maritalStatus": null
+            },
+            {
+                "fullName": "Top-Ups",
+                "username": "$binomia_topups",
+                "phone": "8098027291",
+                "userAgreementSigned": true,
+                "email": "topups@gmail.com",
+                "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "dniNumber": "000-0000000-2",
+                "gender": null,
+                "bloodType": null,
+                "occupation": null,
+                "profileImageUrl": null,
+                "address": "Calle 2 #13, Las Palmeras, Guaricano, Santo Domingo Norte ",
+                "dob": "2023-01-10T00:00:00.000Z",
+                "dniExpiration": "2023-01-10T00:00:00.000Z",
+                "password": "123456",
+                "maritalStatus": null
+            },
+            {
+                "fullName": "Reserve",
+                "username": "$binomia_reserve",
+                "phone": "8098027291",
+                "userAgreementSigned": true,
+                "email": "reserve@gmail.com",
+                "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
+                "dniNumber": "000-0000000-3",
+                "gender": null,
+                "bloodType": null,
+                "occupation": null,
+                "profileImageUrl": null,
+                "address": "Calle 2 #13, Las Palmeras, Guaricano, Santo Domingo Norte ",
+                "dob": "2023-01-10T00:00:00.000Z",
+                "dniExpiration": "2023-01-10T00:00:00.000Z",
+                "password": "123456",
+                "maritalStatus": null
+            }
+        ]
+
+        for (const data of users) {
+            await UsersController.createUser(null, {data}, {__: {}, req})
+        }
+
+    } catch (error) {
+        console.log({createUsers: error})
     }
 }
 
@@ -94,133 +121,7 @@ const createTopUpCompany = async () => {
 
 }
 
-const createBinomiaUser = async () => {
-    try {
-        const data = {
-            "fullName": "binomia",
-            "username": "$binomia",
-            "phone": "8297809087",
-            "dniNumber": "000-0000000-0",
-            "userAgreementSigned": true,
-            "email": "brayhan.market@gmail.com",
-            "idFrontUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "idBackUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "faceVideoUrl": "https://res.cloudinary.com/brayhandeaza/image/upload/v1727570912/dinero/cedulas/1727570911329.jpg",
-            "gender": null,
-            "bloodType": null,
-            "occupation": null,
-            "profileImageUrl": null,
-            "address": "test",
-            "dob": "2025-01-01T00:00:00.000Z",
-            "dniExpiration": "2023-01-10T00:00:00.000Z",
-            "password": "123456"
-        }
-
-        const validatedData = await UserJoiSchema.createUser.parseAsync(data)
-        const registerHeader = await GlobalZodSchema.registerHeader.parseAsync({
-            "session-auth-identifier": "00000000000fb36cc0bde8cb00923b2ba6a7a6665cc6b7dde6f8d8c256976030",
-            device: "{}"
-        })
-
-        const regexPattern = new RegExp('^\\d{3}-\\d{7}-\\d{1}');
-
-        if (!regexPattern.test(validatedData.dniNumber)) {
-            console.log("Invalid dni number: " + validatedData.dniNumber);
-            return
-        }
-
-
-        const userExists = await UsersModel.findOne({
-            where: {
-                [Op.or]: [
-                    { email: validatedData.email },
-                    { username: validatedData.username }
-                ]
-            },
-            attributes: ["email", "username", "dniNumber"]
-        })
-
-        if (userExists?.toJSON().email === validatedData.email) {
-            console.log("A user with email: " + validatedData.email + " already exists");
-            return
-        }
-
-        if (userExists?.toJSON().username === validatedData.username) {
-            console.log("A user with username: " + validatedData.username + " already exists");
-            return
-        }
-
-
-        const kycExists = await kycModel.findOne({
-            where: {
-                dniNumber: validatedData.dniNumber
-            }
-        })
-
-        if (kycExists) {
-            console.log("A user with dni: " + validatedData.dniNumber + " already exists");
-            return
-        }
-
-
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(validatedData.password, salt);
-
-        const user = await UsersModel.create(Object.assign({}, validatedData, {
-            password: hashedPassword
-        }))
-
-        const userData = user.toJSON()
-
-        const account = await AccountModel.create({
-            username: user.dataValues.username,
-            currency: "DOP",
-        })
-
-        const kyc = await kycModel.create({
-            userId: userData.id,
-            dniNumber: validatedData.dniNumber,
-            dob: validatedData.dob,
-            status: "validated",
-            expiration: validatedData.dniExpiration,
-            occupation: validatedData.occupation,
-            gender: validatedData.gender,
-            maritalStatus: validatedData.maritalStatus,
-            bloodType: validatedData.bloodType
-        })
-
-        const sid = `${generate()}${generate()}${generate()}`
-        const token = jwt.sign({
-            userId: userData.id,
-            sid
-        }, ZERO_ENCRYPTION_KEY);
-
-        const expires = new Date(Date.now() + 1000 * 60 * 60 * 24) // 1 day
-
-        await SessionModel.create({
-            sid,
-            deviceId: registerHeader['deviceid'],
-            jwt: token,
-            userId: user.dataValues.id,
-            expires,
-            data: registerHeader.device || {}
-        })
-
-        return {
-            ...userData,
-            accounts: [account.toJSON()],
-            kyc: kyc.toJSON(),
-            token
-        }
-
-    } catch (error: any) {
-        console.log(error);
-    }
-}
-
-export const seedDatabase = async () => {
-    // await createUsers()
+export const seedDatabase = async (req: any) => {
+    await createUsers(req)
     await createTopUpCompany()
-    // await createTransactions()
 }

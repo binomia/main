@@ -335,7 +335,6 @@ export class UsersController {
             if (!regexPattern.test(validatedData.dniNumber))
                 throw new GraphQLError('Invalid `dni` format');
 
-
             const userExists = await UsersModel.findOne({
                 where: {
                     [Op.or]: [
@@ -351,7 +350,6 @@ export class UsersController {
 
             if (userExists?.toJSON().username === validatedData.username)
                 throw new GraphQLError('A user with username: ' + validatedData.username + ' already exists');
-
 
             const kycExists = await kycModel.findOne({
                 where: {
